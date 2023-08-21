@@ -1,0 +1,40 @@
+ARG python_version
+
+FROM python:${python_version}
+
+
+ENV PROJET_NAME databases-timeseries-analysis
+# Ajout d'un utilisateur
+RUN useradd -m -d /usr/src/${PROJET_NAME} holmium
+
+RUN mkdir -p /opt/venv
+RUN chown holmium /opt/venv
+RUN chmod 777 /opt/venv
+
+# Par défaut, je copie les sources du backend dans le container
+COPY . /usr/src/${PROJET_NAME}/
+
+#COPY wait_for_it.sh /usr/local/bin/
+#RUN chmod +x /usr/local/bin/*.sh
+
+RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/root/.bash_history" && echo "$SNIPPET" >> "/root/.bashrc"
+
+USER holmium
+
+# Utilisation de l'env virtuel
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+WORKDIR /usr/src/${PROJET_NAME}
+
+ADD requirements.txt .
+# Installation des requirements
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+
+
+
+ENTRYPOINT ["tail"]
+CMD ["-f","/dev/null"]

@@ -1,0 +1,91 @@
+version: "3.9"
+
+
+services:
+
+  outil_test:
+    image: outil_test:latest
+    # Necessary for accessing and creating files with the current user
+    user: "${USER_ID:-root}:${GROUP_ID:-root}"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ..:/usr/src/databases-timeseries-analysis
+      - ~/.bash_history:/root/.bash_history
+#    env_file:
+#      - ../config/dev.env
+    restart: unless-stopped
+
+  timescale:
+    image: timescale/timescaledb-ha:pg14-latest
+    command: postgres -c max_locks_per_transaction=600
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_PASSWORD: 'password'
+      POSTGRES_USER: 'test'
+#    volumes:
+#      - ./imposter:/opt/imposter/config
+##      - ../ressources:/opt/imposter/config/ressources
+    restart: unless-stopped
+
+
+  postgres:
+    image: postgres:14.8-alpine
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_PASSWORD: 'password'
+      POSTGRES_USER: 'test'
+    restart: unless-stopped
+
+  questdb:
+    image: questdb/questdb:latest
+    expose:
+      - "9000"
+      - "8812"
+      - "9009"
+##################################################
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+#      MONGO_INITDB_ROOT_USERNAME: test
+#      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_USERNAME: test
+      MONGO_INITDB_PASSWORD: password
+      MONGO_INITDB_DATABASE: mongo
+
+    expose:
+      - "27017"
+
+
+#  mongo-express:
+#      image: mongo-express
+#      restart: unless-stopped
+#      ports:
+#        - 8081:8081
+#      environment:
+#        ME_CONFIG_MONGODB_ADMINUSERNAME: test
+#        ME_CONFIG_MONGODB_ADMINPASSWORD: password
+#        ME_CONFIG_MONGODB_URL: mongodb://test:example@mongo:27017/
+
+#####################################################
+
+  influxdb:
+    image: influxdb:latest
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: test
+      DOCKER_INFLUXDB_INIT_PASSWORD: password
+      DOCKER_INFLUXDB_INIT_ORG: holmium
+      DOCKER_INFLUXDB_INIT_BUCKET: my-bucket
+    expose:
+      - "8086"
+    restart: unless-stopped
+
+#  arcticdb:
+#    image: arctic_bricole:latest
+#
+
+
