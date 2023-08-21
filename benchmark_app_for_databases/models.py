@@ -29,10 +29,11 @@ class TimeSerieElementDoubleIndexationHorodate(models.Model):
     objects = CopyManager()
 
     class Meta:
+        ordering = ['horodate',]
         indexes = [
             BrinIndex(
                 fields=('horodate',),
-                pages_per_range=32
+                pages_per_range=24
             )
         ]
 
@@ -47,10 +48,11 @@ class TimeSerieElementDoubleIndexationSite(models.Model):
     objects = CopyManager()
 
     class Meta:
+        ordering = ['horodate',]
         indexes = [
             BrinIndex(
                 fields=('id_site',),
-                pages_per_range=32
+                pages_per_range=24
             )
         ]
 
@@ -64,10 +66,11 @@ class TimeSerieElementTripleIndexation(models.Model):
     objects = CopyManager()
 
     class Meta:
+        ordering = ['horodate',]
         indexes = [
             BrinIndex(
                 fields=('horodate', 'id_site'),
-                pages_per_range=32
+                pages_per_range=24
             )
         ]
 
@@ -83,11 +86,10 @@ class TimescaleModel(models.Model):
     TimescaleDateTimeField already present. This is an abstract class it should
     be inheritted by another class for use.
     """
-    horodate = TimescaleDateTimeField(interval="5 minutes")
+    horodate = TimescaleDateTimeField(interval="5 minutes", db_index=True)
 
-    # objects = TimescaleManager()
-    objects = CopyManager()
-
+    objects = TimescaleManager()
+    object_copy = CopyManager()
     class Meta:
         abstract = True
 class TimeSerieElementTimescale(TimescaleModel):

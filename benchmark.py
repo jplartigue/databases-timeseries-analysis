@@ -19,10 +19,11 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
     temps = 0.0
     les_temps = []
     identifiant_original = identifiant_max
-    if base == "postgres" or base == "timescale":
+    if base == "postgres":  #or base == "timescale":
         export = True
     else:
         export = False
+    # export = False
     print(f'models={models}')
     for j in models:
         print(f'base={base}')
@@ -34,7 +35,7 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
         while current != nombre_sites:
             print(f'current={current}\nnombre_sites={nombre_sites}')
             liste_elements, identifiant_max = generation_donnees(min(limite_courbes_en_ram, nombre_sites-current),
-                                                                                date_debut, date_fin, j, identifiant_max, export)
+                                                                 date_debut, date_fin, j, identifiant_max, export)
             print("paré pour insertion en base")
             if export:
                 print(f'utilisation de la fonction spécifique à postgres avec {j.__name__} et {base}')
@@ -54,12 +55,12 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
                 #     fin = time.time()
                 #     temps = temps + (fin - debut)
 
-                debut = time.time()
-                # j.objects.using(base).bulk_create(liste_elements, batch_size=100000)
+                # for i in liste_elements:
+                #     print(f'on insère dans {base}')
+                #     j.objects.using(base).create(i)
 
-                for i in liste_elements:
-                    print(f'i={i}')
-                    j.objects.using(base).create(**i)
+                debut = time.time()
+                j.objects.using(base).bulk_create(liste_elements, batch_size=200000)  #, batch_size=2000
                 fin = time.time()
 
                 # client = MongoClient("mongo", 27017)
@@ -95,11 +96,13 @@ def fonction_lecture(date_depart_operation: dt.datetime, date_fin_operation: dt.
                 #     collection = db.TimeSerieElementMongo
                 #     debut = time.time()
                 #     collection.find({"id_site": {'$in': liste_a_requeter}, "horodate": {'$lte': date_fin_operation.astimezone(ZoneInfo("UTC")), '$gte': date_depart_operation.astimezone(ZoneInfo("UTC"))}})
-                _ = j.objects.using(base).filter(id_site__in=liste_a_requeter, horodate__gte=date_depart_operation.astimezone(ZoneInfo("UTC")),
-                                                      horodate__lte=date_fin_operation.astimezone(ZoneInfo("UTC"))).latest("horodate")
+                _ = list(j.objects.using(base).filter(id_site__in=liste_a_requeter,
+                                                      horodate__gte=date_depart_operation,
+                                                      horodate__lte=date_fin_operation))
             else:
-                _ = list(j.objects.using(base).filter(id_site__in=liste_a_requeter, horodate__gte=date_depart_operation.astimezone(ZoneInfo("UTC")),
-                                                      horodate__lte=date_fin_operation.astimezone(ZoneInfo("UTC"))))
+                _ = list(j.objects.using(base).filter(id_site__in=liste_a_requeter,
+                                                      horodate__gte=date_depart_operation,
+                                                      horodate__lte=date_fin_operation))
             fin = time.time()
             temps = temps + (fin - debut)
         liste_des_temps_et_models[0].append(temps)

@@ -4,40 +4,42 @@ from benchmark import benchmark
 from benchmark_app_for_databases.models import *
 import datetime as dt
 
+from utils.localtime import localise_date
+
 
 def run():
     _dict = {
-        "postgres": [TimeSerieElement, TimeSerieElementDoubleIndexationHorodate]
+        # "postgres": [TimeSerieElement, TimeSerieElementDoubleIndexationHorodate]
                      # TimeSerieElementDoubleIndexationSite, TimeSerieElementTripleIndexation],
-        # "timescale": [TimeSerieElementTimescale],
+        "timescale": [TimeSerieElementTimescale],
         # "mongo": [TimeSerieElementMongo]
     }
 
     liste_performances = []
     try:
         for database, models in _dict.items():
-            # print('ecriture un element')
-            # liste_performances.extend(benchmark(database, models, 1, 'element', 'ecriture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1), 10, [dt.datetime(2021, 1, 1), dt.datetime(2022, 1, 1)], [dt.datetime(2023, 1, 1), dt.datetime(2023, 7, 28)]))
-            #
-            # print('update un element')
-            # liste_performances.extend(
-            #     benchmark(database, models, 1, 'element', 'update', dt.datetime(2022, 2, 1, 0, 0), dt.datetime(2022, 2, 1, 0, 4),
-            #               10, [dt.datetime(2021, 1, 1), dt.datetime(2022, 1, 1)],
-            #               [dt.datetime(2023, 1, 1), dt.datetime(2023, 7, 28)]))
-            #
-            # print('ecriture une courbe')
-            #
-            # liste_performances.extend(
-            #     benchmark(database, models, 1, 'courbe', 'ecriture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1),
-            #               10, [dt.datetime(2021, 1, 1), dt.datetime(2022, 1, 1)],
-            #               [dt.datetime(2023, 1, 1), dt.datetime(2023, 7, 28)]))
-            #
-            # print('insertion avec update une courbe')
-            #
-            # liste_performances.extend(
-            #     benchmark(database, models, 1, 'courbe', 'insertion avec update', dt.datetime(2023, 1, 1), dt.datetime(2023, 1, 1),
-            #               10, [dt.datetime(2021, 1, 1), dt.datetime(2022, 1, 1)],
-            #               [dt.datetime(2023, 1, 1), dt.datetime(2023, 7, 28)]))
+            print('ecriture un element')
+            liste_performances.extend(benchmark(database, models, 1, 'element', 'ecriture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1), 10, [dt.datetime(2021, 1, 1), dt.datetime(2022, 1, 1)], [dt.datetime(2023, 1, 1), dt.datetime(2023, 7, 28)]))
+
+            print('update un element')
+            liste_performances.extend(
+                benchmark(database, models, 1, 'element', 'update', dt.datetime(2022, 2, 1, 0, 0), dt.datetime(2022, 2, 1, 0, 4),
+                          10, [dt.datetime(2021, 1, 1), dt.datetime(2022, 1, 1)],
+                          [dt.datetime(2023, 1, 1), dt.datetime(2023, 7, 28)]))
+
+            print('ecriture une courbe')
+
+            liste_performances.extend(
+                benchmark(database, models, 1, 'courbe', 'ecriture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1),
+                          10, [dt.datetime(2021, 1, 1), dt.datetime(2022, 1, 1)],
+                          [dt.datetime(2023, 1, 1), dt.datetime(2023, 7, 28)]))
+
+            print('insertion avec update une courbe')
+
+            liste_performances.extend(
+                benchmark(database, models, 1, 'courbe', 'insertion avec update', dt.datetime(2023, 1, 1), dt.datetime(2023, 1, 1),
+                          10, [dt.datetime(2021, 1, 1), dt.datetime(2022, 1, 1)],
+                          [dt.datetime(2023, 1, 1), dt.datetime(2023, 7, 28)]))
 
             # print('ecriture 100 courbes')
             #
@@ -60,8 +62,8 @@ def run():
             print('lecture un element')
 
             liste_performances.extend(
-                benchmark(database, models, 1, 'element', 'lecture', dt.datetime(2021, 1, 1, 0, 0),
-                          dt.datetime(2022, 1, 1, 0, 4),
+                benchmark(database, models, 1, 'element', 'lecture', localise_date(dt.datetime(2021, 1, 1, 0, 0)),
+                          localise_date(dt.datetime(2021, 1, 1, 0, 4)),
                           10, [dt.datetime(2021, 1, 1), dt.datetime(2022, 1, 1)],
                           [dt.datetime(2023, 1, 1), dt.datetime(2023, 7, 28)]))
 
