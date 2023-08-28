@@ -16,7 +16,7 @@ def generation_donnees_pandas(annee_debut: int, annee_fin: int):
     return df
 
 
-def generation_donnees(nombre_sites: int, dates_debut: list | dt.datetime, dates_fin: list | dt.datetime, model, identifiant_max, export: bool):
+def generation_donnees(nombre_sites: int, dates_debut: list | dt.datetime, dates_fin: list | dt.datetime, model, identifiant_max, export: bool, base):
     zone = ZoneInfo("UTC")
     liste_elements = []
     site = identifiant_max
@@ -43,37 +43,16 @@ def generation_donnees(nombre_sites: int, dates_debut: list | dt.datetime, dates
         if export:
             courbe_du_site.to_csv(f'tmp/df_{site}.csv', index=False)
             liste_elements.append(f'tmp/df_{site}.csv')
-        # liste_elements.append(courbe_du_site.to_dict('records', into=model()))
         else:
-            liste_elements.extend([model(**i) for i in courbe_du_site.to_dict('records')])
-        # liste_elements.extend(courbe_du_site.to_dict('records'))
+            if base == 'mongo':
+                liste_elements.extend(courbe_du_site.to_dict('records'))
+            else:
+                liste_elements.extend([model(**i) for i in courbe_du_site.to_dict('records')])
 
         site += 1
     print("fin création objects")
     return liste_elements, identifiant_max
 
-# def generation_donnees_pour_ecriture(nombre_sites: int, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiant_max):
-#     zone = ZoneInfo("UTC")
-#     liste_elements = []
-#     site = identifiant_max
-#     for i in range(nombre_sites):
-#
-#         print(f'site={site}')
-#         identifiant_max += 1
-#         index = pd.date_range(date_debut.astimezone(zone), date_fin.astimezone(zone), freq="5min")
-#         valeurs_aleatoires = np.random.rand(len(index), 1)
-#         courbe_du_site = pd.DataFrame(valeurs_aleatoires, columns=["valeur"], index=index)
-#         courbe_du_site["id_site"] = site
-#         courbe_du_site["dernier_flux"] = False
-#         courbe_du_site["identifiant_flux"] = np.random.randint(0, 10000, len(index))
-#         courbe_du_site["date_reception_flux"] = index
-#         courbe_du_site["horodate"] = courbe_du_site.index
-#         courbe_du_site.iloc[-1, 2] = True
-#         # liste_elements.append(courbe_du_site.to_dict('records', into=model()))
-#         liste_elements.extend([model(**i) for i in courbe_du_site.to_dict('records')])
-#
-#         site += 1
-#     print("fin création objects")
-#     return liste_elements, identifiant_max
+
 
 

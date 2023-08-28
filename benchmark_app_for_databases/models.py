@@ -4,78 +4,10 @@ from timescale.db.models.fields import TimescaleDateTimeField
 from timescale.db.models.managers import TimescaleManager
 from djongo import models as mod
 from postgres_copy import CopyManager
+from psqlextra.types import PostgresPartitioningMethod
+from psqlextra.models import PostgresPartitionedModel
 
 
-
-class TimeSerieElement(models.Model):
-    id_site = models.BigIntegerField()
-    identifiant_flux = models.CharField(max_length=50)
-    horodate = models.DateTimeField()
-    date_reception_flux = models.DateTimeField()
-    dernier_flux = models.BooleanField()
-    valeur = models.FloatField()
-    objects = CopyManager()
-
-
-
-
-class TimeSerieElementDoubleIndexationHorodate(models.Model):
-    id_site = models.BigIntegerField()
-    identifiant_flux = models.CharField(max_length=50)
-    horodate = models.DateTimeField()
-    date_reception_flux = models.DateTimeField()
-    dernier_flux = models.BooleanField()
-    valeur = models.FloatField()
-    objects = CopyManager()
-
-    class Meta:
-        ordering = ['horodate',]
-        indexes = [
-            BrinIndex(
-                fields=('horodate',),
-                pages_per_range=24
-            )
-        ]
-
-
-class TimeSerieElementDoubleIndexationSite(models.Model):
-    id_site = models.BigIntegerField()
-    identifiant_flux = models.CharField(max_length=50)
-    horodate = models.DateTimeField()
-    date_reception_flux = models.DateTimeField()
-    dernier_flux = models.BooleanField()
-    valeur = models.FloatField()
-    objects = CopyManager()
-
-    class Meta:
-        ordering = ['horodate',]
-        indexes = [
-            BrinIndex(
-                fields=('id_site',),
-                pages_per_range=24
-            )
-        ]
-
-class TimeSerieElementTripleIndexation(models.Model):
-    id_site = models.BigIntegerField()
-    identifiant_flux = models.CharField(max_length=50)
-    horodate = models.DateTimeField()
-    date_reception_flux = models.DateTimeField()
-    dernier_flux = models.BooleanField()
-    valeur = models.FloatField()
-    objects = CopyManager()
-
-    class Meta:
-        ordering = ['horodate',]
-        indexes = [
-            BrinIndex(
-                fields=('horodate', 'id_site'),
-                pages_per_range=24
-            )
-        ]
-
-# class Meta:
-#     db_index = ('id', 'dernier_flux')
 
 
 
@@ -86,18 +18,22 @@ class TimescaleModel(models.Model):
     TimescaleDateTimeField already present. This is an abstract class it should
     be inheritted by another class for use.
     """
-    horodate = TimescaleDateTimeField(interval="5 minutes", db_index=True)
+    horodate = TimescaleDateTimeField(interval="5 minutes", db_index=True, primary_key=True)
 
     objects = TimescaleManager()
     object_copy = CopyManager()
     class Meta:
         abstract = True
 class TimeSerieElementTimescale(TimescaleModel):
-    id_site = models.BigIntegerField()
+    id_site = models.BigIntegerField(db_index=True)
     identifiant_flux = models.CharField(max_length=50)
     date_reception_flux = models.DateTimeField()
     dernier_flux = models.BooleanField()
     valeur = models.FloatField()
+
+    class Meta:
+        app_label = 'benchmark_app_for_databases'
+        ordering = ("horodate",)
 
 
 # class TimeSerieElementDoubleIndexationSiteTimescale(TimescaleModel):
@@ -115,13 +51,18 @@ class TimeSerieElementTimescale(TimescaleModel):
 
 
 class TimeSerieElementMongo(mod.Model):
-    id_site = models.BigIntegerField()
-    identifiant_flux = models.CharField(max_length=50)
-    horodate = models.DateTimeField()
-    date_reception_flux = models.DateTimeField()
-    dernier_flux = models.BooleanField()
-    valeur = models.FloatField()
+    id_site = mod.BigIntegerField()
+    identifiant_flux = mod.CharField(max_length=50)
+    horodate = mod.DateTimeField()
+    date_reception_flux = mod.DateTimeField()
+    dernier_flux = mod.BooleanField()
+    valeur = mod.FloatField()
     objects = mod.DjongoManager()
+
+    class Meta:
+        _use_db = 'mongo'
+        ordering = ("horodate",)
+        app_label = 'benchmark_app_for_databases'
 
 
 

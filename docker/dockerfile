@@ -19,6 +19,11 @@ COPY . /usr/src/${PROJET_NAME}/
 
 RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/root/.bash_history" && echo "$SNIPPET" >> "/root/.bashrc"
 
+RUN apt update
+RUN apt install libpq-dev --assume-yes
+RUN apt install postgresql --assume-yes
+RUN apt-get install sqlite3
+
 USER holmium
 
 # Utilisation de l'env virtuel
@@ -33,8 +38,11 @@ ADD requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
+#RUN apt install postgresql postgresql-contrib
 
 
 
-ENTRYPOINT ["tail"]
-CMD ["-f","/dev/null"]
+
+
+
+CMD ["tail", "-f","/dev/null"]

@@ -41,6 +41,10 @@ INSTALLED_APPS = [
     'django_extensions',
     'application_benchmark',
     'benchmark_app_for_databases',
+    'psqlextra',
+    'timescale',
+    "django.contrib.postgres",
+    "postgres_benchmark",
 ]
 
 MIDDLEWARE = [
@@ -85,7 +89,8 @@ DATABASES = {
     },
     "postgres": {
         "NAME": "postgres",
-        "ENGINE": "django.db.backends.postgresql",
+        # "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": 'psqlextra.backend',
         "USER": "test",
         "PASSWORD": "password",
         "HOST": "postgres",
@@ -162,3 +167,8 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+PSQLEXTRA_PARTITIONING_MANAGER = 'postgres_benchmark.partitioning.manager'
+
+POSTGRES_EXTRA_DB_BACKEND_BASE = 'django.db.backends.postgresql'
