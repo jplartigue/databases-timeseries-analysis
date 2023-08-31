@@ -5,8 +5,7 @@ import os
 
 from pymongo import MongoClient
 
-from benchmark_app_for_databases.interfaces_bases_de_donnees import InterfacePostgres, InterfaceMongo, \
-    InterfaceTimescale
+from benchmark_app_for_databases.interfaces_bases_de_donnees import *
 from generation_donnes import generation_donnees
 
 
@@ -18,7 +17,7 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
     temps = 0.0
     les_temps = []
     identifiant_original = identifiant_max
-    if base == "postgres":  # or base == "timescale":
+    if base == "postgres" or base == "timescale":
         export = True
     else:
         export = False
@@ -41,6 +40,8 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
                 print(f'utilisation de la fonction spécifique à postgres avec {j.__name__} et {base}')
                 if base == 'postgres':
                     temps = InterfacePostgres.write(j, liste_elements)
+                elif base == 'questdb':
+                    temps = InterfaceQuestdb.write(j, liste_elements)
                 else:
                     temps = InterfaceTimescale.write(j, liste_elements)
                 print(f'il y a actuellement {j.objects.using(base).count()} objets en base')
@@ -49,10 +50,14 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
 
 
                 temps = InterfaceMongo.write(j, liste_elements)
-            else:
+            elif base == 'timescale':
 
                 temps = InterfaceTimescale.write(j, liste_elements)
                 print(f'il y a actuellement {j.objects.using(base).count()} objets en base')
+
+            else:
+                temps = InterfaceQuestdb.write(j, liste_elements)
+            #     temps = Interfaceinfluxdb.write(j, liste_elements)
             print("insertion réussie")
             liste_elements.clear()
             current += min(limite_courbes_en_ram, nombre_sites - current)
@@ -78,6 +83,8 @@ def fonction_lecture(date_depart_operation: dt.datetime, date_fin_operation: dt.
                     temps = InterfaceMongo.read_at_timestamp(date_depart_operation, j, liste_a_requeter)
                 elif base == 'postgres':
                     temps = InterfacePostgres.read_at_timestamp(date_depart_operation, j, liste_a_requeter)
+                elif base == "questdb":
+                    temps = InterfaceQuestdb.read_at_timestamp(date_depart_operation, j, liste_a_requeter)
                 else:
                     temps = InterfaceTimescale.read_at_timestamp(date_depart_operation, j, liste_a_requeter)
             else:
@@ -87,6 +94,8 @@ def fonction_lecture(date_depart_operation: dt.datetime, date_fin_operation: dt.
 
                 elif base == 'timescale':
                     temps = InterfaceTimescale.read_between_dates(date_depart_operation, date_fin_operation, j, liste_a_requeter)
+                elif base == "questdb":
+                    temps = InterfaceQuestdb.read_between_dates(date_depart_operation, date_fin_operation, j, liste_a_requeter)
                 else:
                     temps = InterfacePostgres.read_between_dates(date_depart_operation, date_fin_operation, j, liste_a_requeter)
         liste_des_temps_et_models[0].append(temps)
@@ -126,6 +135,8 @@ def benchmark(base: str, models: list, nombre_elements: int, type_element: str, 
                     temps = InterfaceTimescale.ajout_element_en_fin_de_courbe_de_charge(j, nombre_elements, nombre_courbes)
                 elif base == 'mongo':
                     temps = InterfaceMongo.ajout_element_en_fin_de_courbe_de_charge(j, nombre_elements, nombre_courbes, date_fin=dates_fin[0])
+                elif base == 'questdb':
+                    temps = InterfaceQuestdb.ajout_element_en_fin_de_courbe_de_charge(j, nombre_elements, nombre_courbes)
                 else:
                     raise ValueError('base inconnue')
 
@@ -143,6 +154,8 @@ def benchmark(base: str, models: list, nombre_elements: int, type_element: str, 
                     temps = InterfacePostgres.update_at_timestamp(date_depart_operation, j, liste_elements_a_update)
                 elif base == 'timescale':
                     temps = InterfaceTimescale.update_at_timestamp(date_depart_operation, j, liste_elements_a_update)
+                elif base == 'questdb':
+                    temps = InterfaceQuestdb.update_at_timestamp(date_depart_operation, j, liste_elements_a_update)
                 else:
                     temps = InterfaceMongo.update_at_timestamp(date_depart_operation, j, liste_elements_a_update)
                 resultat_test.append([base, temps, f"update de {nombre_elements} element de type {type_element}", j.__name__])
@@ -155,6 +168,8 @@ def benchmark(base: str, models: list, nombre_elements: int, type_element: str, 
                     temps = InterfacePostgres.update_between_dates(date_depart_operation, date_fin_operation, j, liste_elements_a_update)
                 elif base == 'timescale':
                     temps = InterfaceTimescale.update_between_dates(date_depart_operation, date_fin_operation, j, liste_elements_a_update)
+                elif base == 'questdb':
+                    temps = InterfaceQuestdb.update_between_dates(date_depart_operation, date_fin_operation, j, liste_elements_a_update)
                 else:
                     temps = InterfaceMongo.update_between_dates(date_depart_operation, date_fin_operation, j, liste_elements_a_update)
                 resultat_test.append([base, temps, f"update de {nombre_elements} element de type {type_element}", j.__name__])
@@ -170,6 +185,7 @@ def benchmark(base: str, models: list, nombre_elements: int, type_element: str, 
 
 
 
+
     for i in models:
         if base == 'mongo':
             client = MongoClient("mongo", 27017)
@@ -177,6 +193,16 @@ def benchmark(base: str, models: list, nombre_elements: int, type_element: str, 
             collection = db.TimeSerieElementMongo
             print(f'grand nettoyage lancé pour {i.__name__}')
             collection.remove({})
+            print(f'grand nettoyage terminé pour {i.__name__}')
+        elif base == 'questdb':
+            print(f'grand nettoyage lancé pour {i.__name__}')
+            conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
+            with pg.connect(conn_str) as connection:
+
+                with connection.cursor() as cur:
+                    cur.execute('DROP TABLE test;')
+
+
             print(f'grand nettoyage terminé pour {i.__name__}')
         else:
             print(f'grand nettoyage lancé pour {i.__name__}')

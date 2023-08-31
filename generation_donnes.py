@@ -31,13 +31,18 @@ def generation_donnees(nombre_sites: int, dates_debut: list | dt.datetime, dates
             date_debut = dt.datetime(random.randint(dates_debut[0].year, dates_debut[1].year), random.randint(dates_debut[0].month, dates_debut[1].month), random.randint(dates_debut[0].day, dates_debut[1].day), random.randint(dates_debut[0].hour, dates_debut[1].hour), random.choice([0,5,10,15,20,25,30,35,40,45,50,55])).astimezone(zone)
             date_fin = dt.datetime(random.randint(dates_fin[0].year, dates_fin[1].year), random.randint(dates_fin[0].month, dates_fin[1].month), random.randint(dates_fin[0].day, dates_fin[1].day), random.randint(dates_fin[0].hour, dates_fin[1].hour), random.choice([0,5,10,15,20,25,30,35,40,45,50,55])).astimezone(zone)
             index = pd.date_range(date_debut, date_fin, freq="5min")
+            print(f'date_debut={date_debut}')
         valeurs_aleatoires = np.random.rand(len(index), 1)
         courbe_du_site = pd.DataFrame(valeurs_aleatoires, columns=["valeur"], index=index)
         courbe_du_site["id_site"] = site
         courbe_du_site["dernier_flux"] = False
         courbe_du_site["identifiant_flux"] = np.random.randint(0, 10000, len(index))
-        courbe_du_site["date_reception_flux"] = index
-        courbe_du_site["horodate"] = courbe_du_site.index
+        if base == 'questdb':
+            courbe_du_site["date_reception_flux"] = index.map(pd.Timestamp.timestamp).astype(int)
+            courbe_du_site["horodate"] = courbe_du_site.index.map(pd.Timestamp.timestamp).astype(int)
+        else:
+            courbe_du_site["date_reception_flux"] = index
+            courbe_du_site["horodate"] = courbe_du_site.index
         courbe_du_site.iloc[-1, 2] = True
 
         if export:

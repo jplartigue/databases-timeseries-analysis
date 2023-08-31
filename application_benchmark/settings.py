@@ -123,7 +123,16 @@ DATABASES = {
             'authSource': 'admin',
             'authMechanism': 'SCRAM-SHA-1'
         }
-    }
+    },
+    "questdb": {
+        "NAME": "qdb",
+        # "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": 'psqlextra.backend',
+        "USER": "admin",
+        "PASSWORD": "quest",
+        # "HOST": "questdb",
+        'PORT': '8812',
+    },
 }
 
 DATABASE_ROUTERS = ["benchmark_app_for_databases.routeur.BenchmarkRouter"]

@@ -6,6 +6,7 @@ from djongo import models as mod
 from postgres_copy import CopyManager
 from psqlextra.types import PostgresPartitioningMethod
 from psqlextra.models import PostgresPartitionedModel
+# from influxable.measurement import Measurement, attributes, serializers
 
 
 
@@ -18,12 +19,13 @@ class TimescaleModel(models.Model):
     TimescaleDateTimeField already present. This is an abstract class it should
     be inheritted by another class for use.
     """
-    horodate = TimescaleDateTimeField(interval="5 minutes", db_index=True, primary_key=True)
+    horodate = TimescaleDateTimeField(interval="1 month", db_index=True, primary_key=True)
 
     objects = TimescaleManager()
     object_copy = CopyManager()
     class Meta:
         abstract = True
+
 class TimeSerieElementTimescale(TimescaleModel):
     id_site = models.BigIntegerField(db_index=True)
     identifiant_flux = models.CharField(max_length=50)
@@ -34,20 +36,6 @@ class TimeSerieElementTimescale(TimescaleModel):
     class Meta:
         app_label = 'benchmark_app_for_databases'
         ordering = ("horodate",)
-
-
-# class TimeSerieElementDoubleIndexationSiteTimescale(TimescaleModel):
-#     id_site = models.IntegerField(db_index=True)
-#     identifiant_flux = models.CharField(max_length=50)
-#     date_reception_flux = models.DateTimeField()
-#     dernier_flux = models.IntegerField()
-#     valeur = models.FloatField()
-
-
-
-
-
-
 
 
 class TimeSerieElementMongo(mod.Model):
@@ -64,45 +52,23 @@ class TimeSerieElementMongo(mod.Model):
         ordering = ("horodate",)
         app_label = 'benchmark_app_for_databases'
 
+class TimeSerieElementQuestdb(models.Model):
+    identifiant_flux = models.CharField(max_length=50)
+    date_reception_flux = models.DateTimeField()
+    dernier_flux = models.BooleanField()
+    valeur = models.FloatField()
 
+    id_site = models.BigIntegerField()
+    horodate = models.DateTimeField()
 
+    objects = CopyManager()
 
-# class TimeSerieElementDoubleIndexationHorodateMongo(mod.Model):
-#     id_site = models.IntegerField()
-#     identifiant_flux = models.CharField(max_length=50)
-#     horodate = models.DateTimeField(db_index=True)
-#     date_reception_flux = models.DateTimeField()
-#     dernier_flux = models.IntegerField()
-#     valeur = models.FloatField()
+# class TimeserieElementInflux(Measurement):
+#     id_site = attributes.IntegerFieldAttribute()
+#     identifiant_flux = attributes.StringFieldAttribute()
+#     horodate = attributes.DateTimeFieldAttribute()
+#     date_reception_flux = attributes.DateTimeFieldAttribute()
+#     dernier_flux = attributes.BooleanFieldAttribute()
+#     valeur = attributes.FloatFieldAttribute()
 #
-#     class Meta:
-#         indexes = [
-#             TextIndex(fields=['horodate'])
-#         ]
-#
-#
-# class TimeSerieElementDoubleIndexationSiteMongo(mod.Model):
-#     id_site = models.IntegerField(db_index=True)
-#     identifiant_flux = models.CharField(max_length=50)
-#     horodate = models.DateTimeField()
-#     date_reception_flux = models.DateTimeField()
-#     dernier_flux = models.IntegerField()
-#     valeur = models.FloatField()
-#
-#     class Meta:
-#         indexes = [
-#             TextIndex(fields=['id_site'])
-#         ]
-#
-# class TimeSerieElementTripleIndexationMongo(mod.Model):
-#     id_site = models.IntegerField(db_index=True)
-#     identifiant_flux = models.CharField(max_length=50)
-#     horodate = models.DateTimeField(db_index=True)
-#     date_reception_flux = models.DateTimeField()
-#     dernier_flux = models.IntegerField()
-#     valeur = models.FloatField()
-#
-#     class Meta:
-#         indexes = [
-#             TextIndex(fields=['horodate', 'id_site'])
-#         ]
+#     parser_class = serializers.MeasurementPointSerializer
