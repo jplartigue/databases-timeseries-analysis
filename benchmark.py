@@ -190,7 +190,14 @@ def benchmark(base: str, models: list, nombre_elements: int, type_element: str, 
         if base == 'mongo':
             client = MongoClient("mongo", 27017)
             db = client.mongo
-            collection = db.TimeSerieElementMongo
+            if isinstance(i(), TimeSerieElementMongo):
+                collection = db.TimeSerieElementMongo
+            elif isinstance(i(), TimeSerieElementMongoIndexHorodate):
+                collection = db.TimeSerieElementMongoIndexHorodate
+            elif isinstance(i(), TimeSerieElementMongoIndexSite):
+                collection = db.TimeSerieElementMongoIndexSite
+            else:
+                collection = db.TimeSerieElementMongoIndexHorodateSite
             print(f'grand nettoyage lancé pour {i.__name__}')
             collection.remove({})
             print(f'grand nettoyage terminé pour {i.__name__}')
@@ -200,7 +207,7 @@ def benchmark(base: str, models: list, nombre_elements: int, type_element: str, 
             with pg.connect(conn_str) as connection:
 
                 with connection.cursor() as cur:
-                    cur.execute('DROP TABLE test;')
+                    cur.execute(f'DROP TABLE {i().name};')
 
 
             print(f'grand nettoyage terminé pour {i.__name__}')

@@ -22,7 +22,7 @@ def generation_donnees(nombre_sites: int, dates_debut: list | dt.datetime, dates
     site = identifiant_max
     for i in range(nombre_sites):
 
-        print(f'site={site}')
+        # print(f'site={site}')
         identifiant_max += 1
 
         if isinstance(dates_debut, dt.datetime):
@@ -31,7 +31,7 @@ def generation_donnees(nombre_sites: int, dates_debut: list | dt.datetime, dates
             date_debut = dt.datetime(random.randint(dates_debut[0].year, dates_debut[1].year), random.randint(dates_debut[0].month, dates_debut[1].month), random.randint(dates_debut[0].day, dates_debut[1].day), random.randint(dates_debut[0].hour, dates_debut[1].hour), random.choice([0,5,10,15,20,25,30,35,40,45,50,55])).astimezone(zone)
             date_fin = dt.datetime(random.randint(dates_fin[0].year, dates_fin[1].year), random.randint(dates_fin[0].month, dates_fin[1].month), random.randint(dates_fin[0].day, dates_fin[1].day), random.randint(dates_fin[0].hour, dates_fin[1].hour), random.choice([0,5,10,15,20,25,30,35,40,45,50,55])).astimezone(zone)
             index = pd.date_range(date_debut, date_fin, freq="5min")
-            print(f'date_debut={date_debut}')
+            # print(f'date_debut={date_debut}')
         valeurs_aleatoires = np.random.rand(len(index), 1)
         courbe_du_site = pd.DataFrame(valeurs_aleatoires, columns=["valeur"], index=index)
         courbe_du_site["id_site"] = site
@@ -49,13 +49,13 @@ def generation_donnees(nombre_sites: int, dates_debut: list | dt.datetime, dates
             courbe_du_site.to_csv(f'tmp/df_{site}.csv', index=False)
             liste_elements.append(f'tmp/df_{site}.csv')
         else:
-            if base == 'mongo':
+            if base == 'mongo' or base == 'questdb':
                 liste_elements.extend(courbe_du_site.to_dict('records'))
             else:
                 liste_elements.extend([model(**i) for i in courbe_du_site.to_dict('records')])
 
         site += 1
-    print("fin création objects")
+    # print("fin création objects")
     return liste_elements, identifiant_max
 
 

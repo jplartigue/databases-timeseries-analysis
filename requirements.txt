@@ -9,3 +9,4 @@ pymongo==3.12.3
 django-extensions==3.2.3
 django-postgres-copy==2.7.3
 django-postgres-extra==2.0.8
+pympler
