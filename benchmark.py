@@ -16,6 +16,7 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
     limite_courbes_en_ram = 10
     temps = 0.0
     les_temps = []
+    premiere_fois = True
     identifiant_original = identifiant_max
     if base == "postgres" or base == "timescale":
         export = True
@@ -55,9 +56,12 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
                 temps = InterfaceTimescale.write(j, liste_elements)
                 print(f'il y a actuellement {j.objects.using(base).count()} objets en base')
 
+            elif base == 'influxdb':
+                temps = Interfaceinfluxdb.write(j, liste_elements, premiere_fois=premiere_fois)
+                premiere_fois = False
+
             else:
                 temps = InterfaceQuestdb.write(j, liste_elements)
-            #     temps = Interfaceinfluxdb.write(j, liste_elements)
             print("insertion réussie")
             liste_elements.clear()
             current += min(limite_courbes_en_ram, nombre_sites - current)

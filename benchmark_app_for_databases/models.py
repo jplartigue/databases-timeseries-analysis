@@ -117,12 +117,5 @@ class TimeSerieElementQuestdbIndexSite(models.Model):
 class TimeSerieElementQuestdbIndexSitePartition(models.Model):
     name = "timeserieelementquestdbindexsitepartition"
 
-# class TimeserieElementInflux(Measurement):
-#     id_site = attributes.IntegerFieldAttribute()
-#     identifiant_flux = attributes.StringFieldAttribute()
-#     horodate = attributes.DateTimeFieldAttribute()
-#     date_reception_flux = attributes.DateTimeFieldAttribute()
-#     dernier_flux = attributes.BooleanFieldAttribute()
-#     valeur = attributes.FloatFieldAttribute()
-#
-#     parser_class = serializers.MeasurementPointSerializer
+class TimeserieElementInflux(models.Model):
+    name = 'timeserieelementinflux'

@@ -20,8 +20,8 @@ def run():
         #              TimeSerieElementTripleIndexation],
         # "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite,TimeSerieElementMongoIndexHorodateSite],
         # "timescale": [TimeSerieElementTimescale, TimeSerieElementTimescaleDoubleIndexationSite, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition],
-        'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition]
-        ## 'influxdb': [TimeserieElementInflux]
+        # 'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition]
+        'influxdb': [TimeserieElementInflux]
 
     }
 

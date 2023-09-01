@@ -90,7 +90,7 @@ services:
       DOCKER_INFLUXDB_INIT_USERNAME: test
       DOCKER_INFLUXDB_INIT_PASSWORD: password
       DOCKER_INFLUXDB_INIT_ORG: holmium
-      DOCKER_INFLUXDB_INIT_BUCKET: influxdb
+      DOCKER_INFLUXDB_INIT_BUCKET: test
     expose:
       - "8086"
     restart: unless-stopped

@@ -6,6 +6,9 @@ import time
 from zoneinfo import ZoneInfo
 import tracemalloc
 from pympler import tracker
+import pandas as pd
+
+from influxdb import DataFrameClient
 
 from psycopg2.extras import execute_batch
 from pymongo import MongoClient
@@ -419,8 +422,7 @@ class InterfaceQuestdb(InterfaceQueryDb):
         return fin - debut
 
     @classmethod
-    def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args,
-                                                 **kwargs):
+    def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args, **kwargs):
 
         liste_elements_a_inserer = []
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
@@ -454,11 +456,11 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
     @classmethod
     def write(self, model, liste_a_ecrire: [], *args, **kwargs):
-        tr = tracker.SummaryTracker()
-        tr.print_diff()
-        tracemalloc.start()
+        # tr = tracker.SummaryTracker()
+        # tr.print_diff()
+        # tracemalloc.start()
         temps = 0.0
-        batch_size = 10000
+        batch_size = 15000
 
         print(f'nom de la table = {model().name}')
 
@@ -493,7 +495,7 @@ class InterfaceQuestdb(InterfaceQueryDb):
                     temps = temps + (fin - debut)
                     print(f'temps = {fin - debut}')
                     liste_a_ecrire = liste_a_ecrire[batch_size:]
-                    tr.print_diff()
+                    # tr.print_diff()
 
                     del i
                     del requete
@@ -501,8 +503,8 @@ class InterfaceQuestdb(InterfaceQueryDb):
                 if reste != 0:
                     requete = f"INSERT INTO {model().name} (horodate, identifiant_flux, id_site, date_reception_flux, dernier_flux, valeur) VALUES"
                     for i in liste_a_ecrire:
-                        i['horodate'] = i['horodate'] * 1000
-                        i['date_reception_flux'] = i['date_reception_flux'] * 1000
+                        i['horodate'] = i['horodate'] * 1000000
+                        i['date_reception_flux'] = i['date_reception_flux'] * 1000000
                         requete = requete + f" ({i['horodate']}, {i['identifiant_flux']}, '{i['id_site']}', {i['date_reception_flux']}, {i['dernier_flux']}, {i['valeur']}),"
 
                     requete = requete[0:-1] + ";"
@@ -516,91 +518,130 @@ class InterfaceQuestdb(InterfaceQueryDb):
                 del liste_a_ecrire
                 print('it just works !')
                 gc.collect()
-                snapshot = tracemalloc.take_snapshot()
-                top_stats = snapshot.statistics('lineno')
-
-                print("[ Top 10 ]")
-                for stat in top_stats[:30]:
-                    print(stat)
+                # snapshot = tracemalloc.take_snapshot()
+                # top_stats = snapshot.statistics('lineno')
+                #
+                # print("[ Top 10 ]")
+                # for stat in top_stats[:30]:
+                #     print(stat)
                 # for i in gc.garbage:
                 #     print(f'garbage element = {i}')
                 # print(f'locals = {locals()}')
-                tr.print_diff()
+                # tr.print_diff()
         return temps
 
 
 
 
 
-# class Interfaceinfluxdb(InterfaceQueryDb):
-#
-#     @classmethod
-#     def read_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
-#         client = Influxable(
-#             base_url='http://influxdb:8086',
-#             database_name='influxdb',
-#             user='test',
-#             password='password',
-#         )
-#         debut = time.time()
-#         elements = TimeserieElementInflux.get_query().select('*').where(Field('horodate') == timestamp, Field('id_site') in identifiants_sites).evaluate()
-#         fin = time.time()
-#         print(f'element est de type {type(elements)} et ressemble à ça: {elements}')
-#         return fin - debut
-#
-#     @classmethod
-#     def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
-#         client = Influxable(
-#             base_url='http://influxdb:8086',
-#             database_name='influxdb',
-#             user='test',
-#             password='password',
-#         )
-#         debut = time.time()
-#         elements = TimeserieElementInflux.get_query().select('*').where(Field('horodate') > date_debut, Field('horodate') < date_fin, Field('id_site') in identifiants_sites).evaluate()
-#         fin = time.time()
-#         return fin - debut
-#
-#     @classmethod
-#     def update_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
-#         client = Influxable(
-#             base_url='http://influxdb:8086',
-#             database_name='influxdb',
-#             user='test',
-#             password='password',
-#         )
-#         debut = time.time()
-#         elements = TimeserieElementInflux.get_query().select('*').where(Field('horodate') == timestamp, Field('id_site') in identifiants_sites).evaluate()
-#         fin = time.time()
-#         return fin - debut
-#
-#     @classmethod
-#     def update_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
-#         client = Influxable(
-#             base_url='http://influxdb:8086',
-#             database_name='influxdb',
-#             user='test',
-#             password='password',
-#         )
-#
-#     @classmethod
-#     def ajout_element_en_fin_de_courbe_de_charge(self, timestamp: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
-#         client = Influxable(
-#             base_url='http://influxdb:8086',
-#             database_name='influxdb',
-#             user='test',
-#             password='password',
-#         )
-#
-#     @classmethod
-#     def write(self, model, liste_a_ecrire: [], *args, **kwargs):
-#         client = Influxable(
-#             base_url='http://influxdb:8086',
-#             database_name='influxdb',
-#             user='test',
-#             password='password',
-#         )
-#         debut = time.time()
-#         TimeserieElementInflux.bulk_save(liste_a_ecrire)
-#         fin = time.time()
-#         return fin-debut
+class Interfaceinfluxdb(InterfaceQueryDb):
+
+    @classmethod
+    def read_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
+        client = DataFrameClient('influxdb', 8086, 'test', 'password', model().name)
+
+        liste = '('
+        for i in identifiants_sites:
+            liste = liste + f"'{i}',"
+        liste = liste[0:-1] + ')'
+
+        for i in range(10):
+            client.query(f"select * from test where horodate = {timestamp} and id_site in {liste}")
+
+        debut = time.time()
+        elements = client.query(f"select * from test where horodate = {timestamp} and id_site in {liste}")
+        fin = time.time()
+        print(f'element est de type {type(elements)} et ressemble à ça: {elements}')
+        return fin - debut
+
+    @classmethod
+    def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
+        client = DataFrameClient('influxdb', 8086, 'test', 'password', model().name)
+
+        liste = '('
+        for i in identifiants_sites:
+            liste = liste + f"'{i}',"
+        liste = liste[0:-1] + ')'
+
+        for i in range(10):
+            client.query(f"select * from test where id_site in {liste} and horodate between {date_debut} and {date_fin}")
+
+        debut = time.time()
+        elements = client.query(f"select * from test where id_site in {liste} and horodate between {date_debut} and {date_fin}")
+        fin = time.time()
+        print(f'element est de type {type(elements)} et ressemble à ça: {elements}')
+        return fin - debut
+
+    @classmethod
+    def update_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
+        client = DataFrameClient('influxdb', 8086, 'test', 'password', model().name)
+
+        liste = '('
+        for i in identifiants_sites:
+            liste = liste + f"'{i}',"
+        liste = liste[0:-1] + ')'
+
+
+        debut = time.time()
+        elements = client.query(f"update test set valeur=42 where id_site in {liste} and horodate = {timestamp}")
+        fin = time.time()
+        print(f'element est de type {type(elements)} et ressemble à ça: {elements}')
+        return fin - debut
+
+    @classmethod
+    def update_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
+        client = DataFrameClient('influxdb', 8086, 'test', 'password', model().name)
+
+        liste = '('
+        for i in identifiants_sites:
+            liste = liste + f"'{i}',"
+        liste = liste[0:-1] + ')'
+
+        debut = time.time()
+        elements = client.query(f"update test set valeur=42 where id_site in {liste} and horodate between {date_debut} and {date_fin}")
+        fin = time.time()
+        print(f'element est de type {type(elements)} et ressemble à ça: {elements}')
+        return fin - debut
+
+    @classmethod
+    def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args, **kwargs):
+        client = DataFrameClient('influxdb', 8086, 'test', 'password', model().name)
+
+        liste = '('
+        for i in range(nombre_courbes):
+            liste = liste + f"'{i}',"
+        liste = liste[0:-1] + ')'
+
+
+        elements = client.query(f"select max(horodate) from test where id_site in {liste} group by id_site")
+
+        print(f'type de sortie = {type(elements)}\ncontenu = {elements}')
+
+        site = 0
+        liste_elements_a_inserer = []
+        for i in elements:
+            elements_a_inserer, _ = generation_donnees(1, i[0] + dt.timedelta(minutes=5),
+                                                       i[0] + dt.timedelta(minutes=5 * nombre_elements), model, 0,
+                                                       False, 'influxdb')
+            liste_elements_a_inserer.extend(elements_a_inserer)
+            site += 1
+
+        temps = self.write(model, liste_elements_a_inserer, premiere_fois=False)
+
+        return temps
+
+    @classmethod
+    def write(self, model, liste_a_ecrire: [], *args, **kwargs):
+
+        client = DataFrameClient('influxdb',8086, 'test', 'password', "test")
+
+        if kwargs['premiere_fois'] == True:
+            client.create_database('test')
+
+        ultra_dataframe = pd.DataFrame()
+        for i in liste_a_ecrire:
+            ultra_dataframe.merge(i)
+        debut = time.time()
+        client.write_points(ultra_dataframe, 'test', protocol='line')
+        fin = time.time()
+        return fin-debut

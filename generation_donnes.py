@@ -51,6 +51,8 @@ def generation_donnees(nombre_sites: int, dates_debut: list | dt.datetime, dates
         else:
             if base == 'mongo' or base == 'questdb':
                 liste_elements.extend(courbe_du_site.to_dict('records'))
+            elif base == 'influxdb':
+                liste_elements.extend(courbe_du_site)
             else:
                 liste_elements.extend([model(**i) for i in courbe_du_site.to_dict('records')])
 
