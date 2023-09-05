@@ -16,6 +16,7 @@ services:
       - postgres
       - questdb
       - timescale
+      - influxdb
     #    env_file:
 #      - ../config/dev.env
     restart: unless-stopped
@@ -91,12 +92,12 @@ services:
       DOCKER_INFLUXDB_INIT_PASSWORD: password
       DOCKER_INFLUXDB_INIT_ORG: holmium
       DOCKER_INFLUXDB_INIT_BUCKET: test
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: token
+      INFLUX_HOST: influxdb
     expose:
       - "8086"
     restart: unless-stopped
 
-#  arcticdb:
-#    image: arctic_bricole:latest
-#
+
 
 

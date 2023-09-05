@@ -4,6 +4,7 @@ from postgres_copy import CopyManager
 from psqlextra.models import PostgresPartitionedModel
 from psqlextra.types import PostgresPartitioningMethod
 
+from benchmark_app_for_databases.interfaces_bases_de_donnees import InterfacePostgres
 
 
 #
@@ -21,6 +22,7 @@ class TimeseriesCommon(PostgresPartitionedModel):
 
     class Meta:
         abstract = True
+        interface = InterfacePostgres
 
 
 class TimeSerieElement(TimeseriesCommon):
@@ -89,9 +91,9 @@ class TimeseriesCommonNonPartitionne(models.Model):
 
     objects = CopyManager()
 
-
     class Meta:
         abstract = True
+        interface = InterfacePostgres
 
 class TimeSerieElementNonPartitionne(TimeseriesCommonNonPartitionne):
     pass

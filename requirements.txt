@@ -9,5 +9,9 @@ pymongo==3.12.3
 django-extensions==3.2.3
 django-postgres-copy==2.7.3
 django-postgres-extra==2.0.8
-pympler
-influxdb
+pympler==1.0.1
+influxdb==5.3.1
+tabulate==0.9.0
+questdb==1.1.0
+pyarrow==13.0.0
+influxdb-client==1.37.0

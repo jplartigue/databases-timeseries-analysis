@@ -1,22 +1,14 @@
-import time
-from zoneinfo import ZoneInfo
-import datetime as dt
-import os
-
-from pymongo import MongoClient
-
 from benchmark_app_for_databases.interfaces_bases_de_donnees import *
 from generation_donnes import generation_donnees
 
 
 def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
-                                  date_debut: dt.datetime | list,
-                                  date_fin: dt.datetime | list,
-                                  identifiant_max: int, population: bool):
+                                  date_debut: dt.datetime,
+                                  date_fin: dt.datetime,
+                                  identifiant_max: int, population: bool, rand_days: int):
     limite_courbes_en_ram = 10
     temps = 0.0
     les_temps = []
-    premiere_fois = True
     identifiant_original = identifiant_max
     if base == "postgres" or base == "timescale":
         export = True
@@ -24,7 +16,7 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
         export = False
     # export = False
     print(f'models={models}')
-    for j in models:
+    for current_model in models:
         print(f'base={base}')
         if population:
             identifiant_max = 0
@@ -35,33 +27,9 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
             print(f'current={current}\nnombre_sites={nombre_sites}')
 
             liste_elements, identifiant_max = generation_donnees(min(limite_courbes_en_ram, nombre_sites-current),
-                                                                 date_debut, date_fin, j, identifiant_max, export, base)
+                                                                 date_debut, date_fin, current_model, identifiant_max, export, base, rand_days)
             print("paré pour insertion en base")
-            if export:
-                print(f'utilisation de la fonction spécifique à postgres avec {j.__name__} et {base}')
-                if base == 'postgres':
-                    temps = InterfacePostgres.write(j, liste_elements)
-                elif base == 'questdb':
-                    temps = InterfaceQuestdb.write(j, liste_elements)
-                else:
-                    temps = InterfaceTimescale.write(j, liste_elements)
-                print(f'il y a actuellement {j.objects.using(base).count()} objets en base')
-            elif base == 'mongo':
-
-
-
-                temps = InterfaceMongo.write(j, liste_elements)
-            elif base == 'timescale':
-
-                temps = InterfaceTimescale.write(j, liste_elements)
-                print(f'il y a actuellement {j.objects.using(base).count()} objets en base')
-
-            elif base == 'influxdb':
-                temps = Interfaceinfluxdb.write(j, liste_elements, premiere_fois=premiere_fois)
-                premiere_fois = False
-
-            else:
-                temps = InterfaceQuestdb.write(j, liste_elements)
+            temps = current_model.meta.interface.write(current_model, liste_elements)
             print("insertion réussie")
             liste_elements.clear()
             current += min(limite_courbes_en_ram, nombre_sites - current)
@@ -74,7 +42,7 @@ def fonction_lecture(date_depart_operation: dt.datetime, date_fin_operation: dt.
     if type_element == "element":
         taille_ram = taille_ram * 2522880
     liste_des_temps_et_models = [[], []]
-    for j in models:
+    for current_model in models:
         liste_complette_a_requeter = []
         for i in range(0, nombre_elements):
             liste_complette_a_requeter.append(i)
@@ -83,36 +51,24 @@ def fonction_lecture(date_depart_operation: dt.datetime, date_fin_operation: dt.
             liste_a_requeter = liste_complette_a_requeter[0:taille_ram]
             liste_complette_a_requeter = liste_complette_a_requeter[taille_ram:]
             if type_element == "element":
-                if base == "mongo":
-                    temps = InterfaceMongo.read_at_timestamp(date_depart_operation, j, liste_a_requeter)
-                elif base == 'postgres':
-                    temps = InterfacePostgres.read_at_timestamp(date_depart_operation, j, liste_a_requeter)
-                elif base == "questdb":
-                    temps = InterfaceQuestdb.read_at_timestamp(date_depart_operation, j, liste_a_requeter)
-                else:
-                    temps = InterfaceTimescale.read_at_timestamp(date_depart_operation, j, liste_a_requeter)
+                temps = current_model.meta.interface.read_at_timestamp(date_depart_operation, current_model, liste_a_requeter)
             else:
-
-                if base == 'mongo':
-                    temps = InterfaceMongo.read_between_dates(date_depart_operation, date_fin_operation, j, liste_a_requeter)
-
-                elif base == 'timescale':
-                    temps = InterfaceTimescale.read_between_dates(date_depart_operation, date_fin_operation, j, liste_a_requeter)
-                elif base == "questdb":
-                    temps = InterfaceQuestdb.read_between_dates(date_depart_operation, date_fin_operation, j, liste_a_requeter)
-                else:
-                    temps = InterfacePostgres.read_between_dates(date_depart_operation, date_fin_operation, j, liste_a_requeter)
+                temps = current_model.meta.interface.read_between_dates(date_depart_operation, date_fin_operation, current_model, liste_a_requeter)
         liste_des_temps_et_models[0].append(temps)
-        liste_des_temps_et_models[1].append(j)
+        liste_des_temps_et_models[1].append(current_model)
     return liste_des_temps_et_models
 
-def benchmark(base: str, models: list, nombre_elements: int, type_element: str, operation: str, date_depart_operation: dt.datetime, date_fin_operation: dt.datetime, remplissage_prealable: int, dates_depart: list, dates_fin: list, nombre_courbes: int=1):
-    identifiant_max = 0
+def benchmark(base: str, models: list, nombre_elements: int,
+              type_element: str, operation: str,
+              date_depart_operation: dt.datetime,
+              date_fin_operation: dt.datetime,
+              remplissage_prealable: int,
+              nombre_courbes: int=1):
     resultat_test = []
     date_depart_operation = date_depart_operation.astimezone(ZoneInfo('UTC'))
     date_fin_operation = date_fin_operation.astimezone(ZoneInfo('UTC'))
     taille_ram = 10
-    _, identifiant_max = insertion_sans_saturer_la_ram(base, remplissage_prealable, models, dates_depart, dates_fin, identifiant_max, True)
+    identifiant_max = remplissage_prealable
     if operation == 'lecture':
         if type_element != "courbe" and type_element != "element" or nombre_elements > remplissage_prealable:
             raise ValueError("ce type d'élément n'est pas reconnu ou vous avez demander à lire plus d'éléments qu'il n'y en as en base. choix possibles: 'element' ou 'courbe'.")
@@ -125,98 +81,42 @@ def benchmark(base: str, models: list, nombre_elements: int, type_element: str, 
 
     elif operation == 'ecriture':
         if type_element == 'courbe':
-            les_temps, identifiant_max = insertion_sans_saturer_la_ram(base, nombre_elements, models, date_depart_operation, date_fin_operation, identifiant_max, False)
+            les_temps, identifiant_max = insertion_sans_saturer_la_ram(base, nombre_elements, models, date_depart_operation, date_fin_operation, identifiant_max, False, 0)
             for idx, temp in enumerate(les_temps):
                 resultat_test.append([base, temp, f"ecriture de {nombre_elements} element de type {type_element}", models[idx].__name__])
         elif type_element == 'element':
 
 
-            for j in models:
+            for current_model in models:
 
-                if base == 'postgres':
-                    temps = InterfacePostgres.ajout_element_en_fin_de_courbe_de_charge(j, nombre_elements, nombre_courbes)
-                elif base == 'timescale':
-                    temps = InterfaceTimescale.ajout_element_en_fin_de_courbe_de_charge(j, nombre_elements, nombre_courbes)
-                elif base == 'mongo':
-                    temps = InterfaceMongo.ajout_element_en_fin_de_courbe_de_charge(j, nombre_elements, nombre_courbes, date_fin=dates_fin[0])
-                elif base == 'questdb':
-                    temps = InterfaceQuestdb.ajout_element_en_fin_de_courbe_de_charge(j, nombre_elements, nombre_courbes)
-                else:
-                    raise ValueError('base inconnue')
+                temps = current_model.meta.interface.ajout_element_en_fin_de_courbe_de_charge(current_model, nombre_elements, nombre_courbes)
 
-                resultat_test.append([base, temps, f"ecriture de {nombre_elements} element de type {type_element}", j.__name__])
+                resultat_test.append([base, temps, f"ecriture de {nombre_elements} element de type {type_element}", current_model.__name__])
         else:
             raise ValueError("ce type d'élément n'est pas reconnu. choix possibles: 'element' ou 'courbe'.")
     elif operation == "update":
         if type_element == 'element':
-            for j in models:
+            for current_model in models:
                 liste_elements_a_update = []
                 for i in range(nombre_elements):
                     liste_elements_a_update.append(i)
                 # print(f'les éléments qui seront demandés sont {liste_elements_a_update}')
-                if base == 'postgres':
-                    temps = InterfacePostgres.update_at_timestamp(date_depart_operation, j, liste_elements_a_update)
-                elif base == 'timescale':
-                    temps = InterfaceTimescale.update_at_timestamp(date_depart_operation, j, liste_elements_a_update)
-                elif base == 'questdb':
-                    temps = InterfaceQuestdb.update_at_timestamp(date_depart_operation, j, liste_elements_a_update)
-                else:
-                    temps = InterfaceMongo.update_at_timestamp(date_depart_operation, j, liste_elements_a_update)
-                resultat_test.append([base, temps, f"update de {nombre_elements} element de type {type_element}", j.__name__])
+                temps = current_model.meta.interface.update_at_timestamp(date_depart_operation, current_model, liste_elements_a_update)
+                resultat_test.append([base, temps, f"update de {nombre_elements} element de type {type_element}", current_model.__name__])
         elif type_element == 'courbe':
-            for j in models:
+            for current_model in models:
                 liste_elements_a_update = []
                 for i in range(nombre_elements):
                     liste_elements_a_update.append(i)
-                if base == 'postgres':
-                    temps = InterfacePostgres.update_between_dates(date_depart_operation, date_fin_operation, j, liste_elements_a_update)
-                elif base == 'timescale':
-                    temps = InterfaceTimescale.update_between_dates(date_depart_operation, date_fin_operation, j, liste_elements_a_update)
-                elif base == 'questdb':
-                    temps = InterfaceQuestdb.update_between_dates(date_depart_operation, date_fin_operation, j, liste_elements_a_update)
-                else:
-                    temps = InterfaceMongo.update_between_dates(date_depart_operation, date_fin_operation, j, liste_elements_a_update)
-                resultat_test.append([base, temps, f"update de {nombre_elements} element de type {type_element}", j.__name__])
+                temps = current_model.meta.interface.update_between_dates(date_depart_operation, date_fin_operation, current_model, liste_elements_a_update)
+                resultat_test.append([base, temps, f"update de {nombre_elements} element de type {type_element}", current_model.__name__])
         else:
             raise ValueError("ce type d'élément n'est pas reconnu. choix possibles: 'element' ou 'courbe'.")
     elif operation == "insertion avec update":
-        temps, identifiant_max = insertion_sans_saturer_la_ram(base, nombre_elements, models, date_depart_operation, date_fin_operation, identifiant_max, False)
-        for j in range(len(models)):
-            resultat_test.append([base, temps[j], f"update de {nombre_elements} element de type {type_element}", models[j].__name__])
+        temps, identifiant_max = insertion_sans_saturer_la_ram(base, nombre_elements, models, date_depart_operation, date_fin_operation, identifiant_max, False, 0)
+        for current_model in range(len(models)):
+            resultat_test.append([base, temps[current_model], f"update de {nombre_elements} element de type {type_element}", models[current_model].__name__])
     else:
         raise ValueError("ce type d'opération n'est pas reconnu. choix possibles: 'lecture', 'update', 'insertion avec update' ou 'ecriture'.")
 
-
-
-
-
-    for i in models:
-        if base == 'mongo':
-            client = MongoClient("mongo", 27017)
-            db = client.mongo
-            if isinstance(i(), TimeSerieElementMongo):
-                collection = db.TimeSerieElementMongo
-            elif isinstance(i(), TimeSerieElementMongoIndexHorodate):
-                collection = db.TimeSerieElementMongoIndexHorodate
-            elif isinstance(i(), TimeSerieElementMongoIndexSite):
-                collection = db.TimeSerieElementMongoIndexSite
-            else:
-                collection = db.TimeSerieElementMongoIndexHorodateSite
-            print(f'grand nettoyage lancé pour {i.__name__}')
-            collection.remove({})
-            print(f'grand nettoyage terminé pour {i.__name__}')
-        elif base == 'questdb':
-            print(f'grand nettoyage lancé pour {i.__name__}')
-            conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
-            with pg.connect(conn_str) as connection:
-
-                with connection.cursor() as cur:
-                    cur.execute(f'DROP TABLE {i().name};')
-
-
-            print(f'grand nettoyage terminé pour {i.__name__}')
-        else:
-            print(f'grand nettoyage lancé pour {i.__name__}')
-            i.objects.using(base).all().delete()
-            print(f'grand nettoyage terminé pour {i.__name__}')
     return resultat_test

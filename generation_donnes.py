@@ -1,22 +1,38 @@
 import random
 import datetime as dt
+import time
 from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from utils.localtime import localised_year_interval
+from utils.localtime import localised_year_interval, localise_date
 import numpy as np
 
-def generation_donnees_pandas(annee_debut: int, annee_fin: int):
-    sd, ed = localised_year_interval([annee_debut, annee_fin])
-    idx = pd.date_range(sd, ed, freq="5min")
-    data = np.random.rand(len(idx), 1)
-    df = pd.DataFrame(data, index=idx)
-    df.columns = ["valeur"]
-    return df
+from utils.singleton import SingletonMeta
 
 
-def generation_donnees(nombre_sites: int, dates_debut: list | dt.datetime, dates_fin: list | dt.datetime, model, identifiant_max, export: bool, base):
+# def generation_donnees_pandas(annee_debut: int, annee_fin: int):
+#     sd, ed = localised_year_interval([annee_debut, annee_fin])
+#     idx = pd.date_range(sd, ed, freq="5min")
+#     data = np.random.rand(len(idx), 1)
+#     df = pd.DataFrame(data, index=idx)
+#     df.columns = ["valeur"]
+#     return df
+
+class SingletonData(metaclass=SingletonMeta):
+    def __init__(self, min_start_date: dt.date = None, max_end_date: dt.date = None):
+        self.sd = localise_date(min_start_date)
+        self.ed = localise_date(max_end_date)
+        idx = pd.date_range(self.sd, self.ed, freq='5min')
+        self.init_df = pd.DataFrame(index=idx, data={"valeur": np.random.rand(len(idx), )})
+
+    def get_init_df(self, rand_days=0):
+        sd = self.sd + dt.timedelta(days=random.randint(0, rand_days))
+        ed = self.ed - dt.timedelta(days=random.randint(0, rand_days))
+        return self.init_df.loc[sd: ed]
+
+def generation_donnees(nombre_sites: int, date_debut: dt.datetime, date_fin: dt.datetime, model,
+                       identifiant_max, export: bool, base, rand_days: int):
     zone = ZoneInfo("UTC")
     liste_elements = []
     site = identifiant_max
@@ -25,41 +41,44 @@ def generation_donnees(nombre_sites: int, dates_debut: list | dt.datetime, dates
         # print(f'site={site}')
         identifiant_max += 1
 
-        if isinstance(dates_debut, dt.datetime):
-            index = pd.date_range(dates_debut.astimezone(zone), dates_fin.astimezone(zone), freq="5min")
-        else:
-            date_debut = dt.datetime(random.randint(dates_debut[0].year, dates_debut[1].year), random.randint(dates_debut[0].month, dates_debut[1].month), random.randint(dates_debut[0].day, dates_debut[1].day), random.randint(dates_debut[0].hour, dates_debut[1].hour), random.choice([0,5,10,15,20,25,30,35,40,45,50,55])).astimezone(zone)
-            date_fin = dt.datetime(random.randint(dates_fin[0].year, dates_fin[1].year), random.randint(dates_fin[0].month, dates_fin[1].month), random.randint(dates_fin[0].day, dates_fin[1].day), random.randint(dates_fin[0].hour, dates_fin[1].hour), random.choice([0,5,10,15,20,25,30,35,40,45,50,55])).astimezone(zone)
-            index = pd.date_range(date_debut, date_fin, freq="5min")
-            # print(f'date_debut={date_debut}')
-        valeurs_aleatoires = np.random.rand(len(index), 1)
-        courbe_du_site = pd.DataFrame(valeurs_aleatoires, columns=["valeur"], index=index)
-        courbe_du_site["id_site"] = site
-        courbe_du_site["dernier_flux"] = False
-        courbe_du_site["identifiant_flux"] = np.random.randint(0, 10000, len(index))
-        if base == 'questdb':
-            courbe_du_site["date_reception_flux"] = index.map(pd.Timestamp.timestamp).astype(int)
-            courbe_du_site["horodate"] = courbe_du_site.index.map(pd.Timestamp.timestamp).astype(int)
-        else:
-            courbe_du_site["date_reception_flux"] = index
-            courbe_du_site["horodate"] = courbe_du_site.index
-        courbe_du_site.iloc[-1, 2] = True
 
+        courbe_du_site = SingletonData(date_debut.date(), date_fin.date()).get_init_df(rand_days=rand_days)
+
+        # debut = time.time()
+        # valeurs_aleatoires = np.random.rand(len(index), 1)
+        # courbe_du_site = pd.DataFrame(valeurs_aleatoires, columns=["valeur"], index=index)
+        courbe_du_site["id_site"] = str(site)
+        courbe_du_site["dernier_flux"] = False
+        courbe_du_site["identifiant_flux"] = np.random.randint(0, 10000, courbe_du_site.shape[0])
+        if base == 'questdb':
+            courbe_du_site["date_reception_flux"] = courbe_du_site.index.map(pd.Timestamp.timestamp).astype('datetime64[ns]')
+            courbe_du_site["horodate"] = courbe_du_site.index.map(pd.Timestamp.timestamp).astype('datetime64[ns]')
+
+        else:
+            courbe_du_site["date_reception_flux"] = courbe_du_site.index
+            courbe_du_site["horodate"] = courbe_du_site.index
+        # courbe_du_site.iloc[-1, 2] = True
+        # fin = time.time()
+        # print(f'temps1 = {fin - debut}')
+
+        # debut = time.time()
         if export:
+            # debut = time.time()
             courbe_du_site.to_csv(f'tmp/df_{site}.csv', index=False)
             liste_elements.append(f'tmp/df_{site}.csv')
+            # fin = time.time()
+            # print(f'temps2 = {fin - debut}')
         else:
-            if base == 'mongo' or base == 'questdb':
+            if base == 'mongo':  # or base == 'influxdb':
                 liste_elements.extend(courbe_du_site.to_dict('records'))
-            elif base == 'influxdb':
-                liste_elements.extend(courbe_du_site)
+            elif base == 'questdb' or base == 'influxdb':
+                liste_elements.append(courbe_du_site)
             else:
                 liste_elements.extend([model(**i) for i in courbe_du_site.to_dict('records')])
+        # fin = time.time()
+        # print(f'temps2 = {fin - debut}')
+        # print(f'type = {type(liste_elements[0])}')
 
         site += 1
-    # print("fin création objects")
+    # print("fin création objets")
     return liste_elements, identifiant_max
-
-
-
-
