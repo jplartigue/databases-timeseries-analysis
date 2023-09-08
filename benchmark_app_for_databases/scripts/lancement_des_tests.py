@@ -1,15 +1,17 @@
 import datetime as dt
-import gc
-from functools import partial
-
 import pandas as pd
 from pymongo import MongoClient
 import psycopg2 as pg
 
+import influxdb_client
+
 from benchmark import benchmark, insertion_sans_saturer_la_ram
-from benchmark_app_for_databases.models import *
+from benchmark_app_for_databases.models import TimeSerieElementMongo, TimeSerieElementMongoIndexSite, \
+    TimeSerieElementMongoIndexHorodateSite, TimeSerieElementMongoIndexHorodate, TimeSerieElementTimescale, \
+    TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSitePartition, \
+    TimeSerieElementQuestdbIndexSite
 from postgres_benchmark.models import *
-from utils.localtime import localise_date
+# from utils.localtime import localise_date
 from utils.profile import ProfilerHandler
 
 profiler = ProfilerHandler(print_our_code_only=True, sortby='cumtime', print_callers=True, print_callees=True,
@@ -22,10 +24,10 @@ def run():
         #              TimeSerieElementDoubleIndexationSiteNonPartitionne, TimeSerieElementTripleIndexationNonPartitionne,
         #              TimeSerieElement, TimeSerieElementIndexationHorodate, TimeSerieElementDoubleIndexationSite,
         #              TimeSerieElementTripleIndexation],
-        # "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite,TimeSerieElementMongoIndexHorodateSite],
-        # "timescale": [TimeSerieElementTimescale],
-        # 'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition]
-        'influxdb': [TimeserieElementInflux]
+        "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite,TimeSerieElementMongoIndexHorodateSite],
+        "timescale": [TimeSerieElementTimescale],
+        'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition]
+        # 'influxdb': [TimeserieElementInflux]
 
     }
 
@@ -33,14 +35,16 @@ def run():
     # gc.set_debug(gc.DEBUG_STATS)  # gc.DEBUG_COLLECTABLE  gc.DEBUG_STATS gc.DEBUG_LEAK
 
     # print(f'le ramasse miettes est: {gc.isenabled()}')
-    date_depart_population = dt.datetime(2023, 6, 1)
+    date_depart_population = dt.datetime(2020, 1, 1)
     date_fin_population = dt.datetime(2023, 7, 31)
     population_base = 10
+    ecart_aleatoire = 100
 
     try:
         for database, models in _dict.items():
+            print('jaj')
             # print('lecture un courbe')
-            _, _ = insertion_sans_saturer_la_ram(database, population_base, models, date_depart_population, date_fin_population, 0, True, 100)
+            insertion_sans_saturer_la_ram(database, population_base, models, date_depart_population, date_fin_population, 0, True, ecart_aleatoire)
 
             # kwargs = {
             #     'base': database,
@@ -57,7 +61,7 @@ def run():
             # liste_performances.extend(perfs)
             print('ecriture un element')
             liste_performances.extend(
-                benchmark(database, models, 1, 'courbe', 'lecture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1), population_base))
+                benchmark(database, models, 1, 'element', 'ecriture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1), population_base))
 
             print('update un element')
             liste_performances.extend(
@@ -74,7 +78,7 @@ def run():
             print('insertion avec update une courbe')
 
             liste_performances.extend(
-                benchmark(database, models, 1, 'courbe', 'insertion avec update', dt.datetime(2023, 7, 1),
+                benchmark(database, models, 1, 'courbe', 'ecriture', dt.datetime(2023, 7, 1),
                           dt.datetime(2023, 8, 1),
                           population_base))
 
@@ -97,8 +101,8 @@ def run():
             print('lecture un element')
 
             liste_performances.extend(
-                benchmark(database, models, 1, 'element', 'lecture', localise_date(dt.datetime(2022, 2, 1, 0, 0)),
-                          localise_date(dt.datetime(2022, 1, 1, 0, 7)),
+                benchmark(database, models, 1, 'element', 'lecture', dt.datetime(2022, 2, 1, 0, 0,),
+                          dt.datetime(2022, 1, 1, 0, 7),
                           population_base))
 
             print('lecture une courbe')
@@ -125,7 +129,7 @@ def run():
         # profiler.gen_report()
 
         resultats_ecriture = pd.DataFrame(liste_performances)
-        resultats_ecriture.to_csv(f'resultats_{dt.datetime.now()}.csv')
+        resultats_ecriture.to_csv(f'resultats_{population_base}_courbes_entre{date_depart_population}_et_{date_fin_population}_{dt.datetime.now()}.csv')
 
     finally:
         for k, i in _dict.items():
@@ -154,6 +158,21 @@ def run():
 
 
                     print(f'grand nettoyage terminé pour {j.__name__}')
+                elif k == 'influxdb':
+
+                    client = influxdb_client.InfluxDBClient(
+                        url="http://influxdb:8086",
+                        token="token",
+                        org="holmium",
+                        username="test",
+                        password="password"
+                    )
+
+                    delete_api = client.delete_api()
+
+                    delete_api.delete(dt.datetime(1980, 1, 1), dt.datetime(2077, 1, 1), '_measurement="test"', bucket="test")
+
+                    client.__del__()
                 else:
                     print(f'grand nettoyage lancé pour {j.__name__}')
                     j.objects.using(k).all().delete()

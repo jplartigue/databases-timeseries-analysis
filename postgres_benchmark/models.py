@@ -19,10 +19,11 @@ class TimeseriesCommon(PostgresPartitionedModel):
     horodate = models.DateTimeField()
 
     objects = CopyManager()
+    interface = InterfacePostgres
 
     class Meta:
         abstract = True
-        interface = InterfacePostgres
+
 
 
 class TimeSerieElement(TimeseriesCommon):
@@ -90,10 +91,10 @@ class TimeseriesCommonNonPartitionne(models.Model):
     horodate = models.DateTimeField()
 
     objects = CopyManager()
+    interface = InterfacePostgres
 
     class Meta:
         abstract = True
-        interface = InterfacePostgres
 
 class TimeSerieElementNonPartitionne(TimeseriesCommonNonPartitionne):
     pass
