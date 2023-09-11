@@ -1,5 +1,6 @@
 from benchmark_app_for_databases.interfaces_bases_de_donnees import *
 from generation_donnes import generation_donnees
+from utils.localtime import localise_date
 
 
 def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
@@ -9,6 +10,8 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
     limite_courbes_en_ram = 10
     temps = 0.0
     les_temps = []
+    date_debut = localise_datetime(date_debut)
+    date_fin = localise_datetime(date_fin)
     identifiant_original = identifiant_max
     if base == "postgres" or base == "timescale":
         export = True

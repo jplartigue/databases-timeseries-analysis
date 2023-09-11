@@ -18,6 +18,7 @@ class TimeseriesCommon(PostgresPartitionedModel):
     id_site = models.BigIntegerField()
     horodate = models.DateTimeField()
 
+    objects_original = models.Manager()
     objects = CopyManager()
     interface = InterfacePostgres
 

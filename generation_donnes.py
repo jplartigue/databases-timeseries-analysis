@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from utils.localtime import localised_year_interval, localise_date
+from utils.localtime import localised_year_interval, localise_date, localise_datetime
 import numpy as np
 
 from utils.singleton import SingletonMeta
@@ -50,9 +50,8 @@ def generation_donnees(nombre_sites: int, date_debut: dt.datetime, date_fin: dt.
         courbe_du_site["dernier_flux"] = False
         courbe_du_site["identifiant_flux"] = np.random.randint(0, 10000, courbe_du_site.shape[0])
         if base == 'questdb':
-            courbe_du_site["date_reception_flux"] = courbe_du_site.index.map(pd.Timestamp.timestamp).astype(
-                'datetime64[ns]')
-            courbe_du_site["horodate"] = courbe_du_site.index.map(pd.Timestamp.timestamp).astype('datetime64[ns]')
+            courbe_du_site["date_reception_flux"] = courbe_du_site.index.astype('datetime64[ns, Europe/Paris]')
+            courbe_du_site["horodate"] = courbe_du_site.index.astype('datetime64[ns, Europe/Paris]')
 
         else:
             courbe_du_site["date_reception_flux"] = courbe_du_site.index
@@ -62,6 +61,7 @@ def generation_donnees(nombre_sites: int, date_debut: dt.datetime, date_fin: dt.
         # print(f'temps1 = {fin - debut}')
 
         # debut = time.time()
+        # print(courbe_du_site)
         if export:
             # debut = time.time()
             courbe_du_site.to_csv(f'tmp/df_{site}.csv', index=False)
@@ -97,7 +97,7 @@ def generation_pour_ajout_donnees(nombre_sites: int, date_debut: dt.datetime, da
 
         valeurs_aleatoires = np.random.rand(len(index), 1)
         courbe_du_site = pd.DataFrame(valeurs_aleatoires, columns=["valeur"], index=index)
-        courbe_du_site["id_site"] = site
+        courbe_du_site["id_site"] = str(site)
         courbe_du_site["dernier_flux"] = False
         courbe_du_site["identifiant_flux"] = np.random.randint(0, 10000, len(index))
         if base == 'questdb':

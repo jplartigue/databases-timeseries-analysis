@@ -170,7 +170,7 @@ class InterfaceTimescale(InterfaceQueryDb):
             print(len(liste_a_ecrire))
             print('debut de l"insertion')
             model.object_copy.from_csv(i)
-            print('debut de l"insertion')
+            print('fin de l"insertion')
             fin = time.time()
             temps = temps + (fin - debut)
             os.remove(i)
@@ -259,11 +259,11 @@ class InterfaceMongo(InterfaceQueryDb):
         client = MongoClient("mongo", 27017)
         db = client.mongo
         collection = db.TimeSerieElementMongo
-        # print(f'liste des collections {db.list_collection_names()}')
+        print(f'liste des collections {db.list_collection_names()}')
         liste_elements_a_inserer = []
         for i in range(nombre_courbes):
             derniere_entree = dt.datetime(1981, 4, 2)
-            for k in collection.find({"id_site": str(i)}).sort([{'horodate', -1}]).limit(1):
+            for k in collection.find({"id_site": f'{i}'}).sort([('horodate', pymongo.DESCENDING),]).limit(1):
 
                 if derniere_entree < k['horodate']:
                     derniere_entree = k['horodate']
@@ -442,13 +442,26 @@ class InterfaceQuestdb(InterfaceQueryDb):
                 print(f'max = {nombre_courbes}')
                 liste = '('
                 for i in range(nombre_courbes):
+                    # cur.execute(f"SELECT MAX(horodate) FROM {model.name} WHERE id_site IN ('{i}');")  # WHERE id_site IN {liste}
+                    # cur.execute(f"SELECT id_site FROM {model.name};")
+                    # records = cur.fetchall()
+                    # for j in records:
+                    #     print(j)
+                    # liste.append(records[0])
+                    # time.sleep(20)
+                    # print(liste)
                     liste = liste + f"'{i}',"
                 liste = liste[0:-1] + ')'
+                # print(f"\n\n\nSELECT MAX(horodate) FROM {model().name} WHERE id_site IN {liste} GROUP BY id_site;\n\n\n")
+
                 cur.execute(f"SELECT MAX(horodate) FROM {model().name} WHERE id_site IN {liste} GROUP BY id_site;")
+                # cur.execute(f'SELECT * FROM {model.name} WHERE id_site IN {liste};')  #WHERE id_site IN {liste}
                 records = cur.fetchall()
 
-                print(f'toutes les dates {records[-10:]}')
-                print(f'element = {records[0][0]}')
+                # print(f'toutes les dates {records[-10:]}')
+                # print(f'element = {records[0][0]} de type {type(records[0][0])}')
+                # time.sleep(20)
+                # print(f'element = {records[0][0]}')
 
                 site = 0
                 for i in records:
@@ -467,7 +480,7 @@ class InterfaceQuestdb(InterfaceQueryDb):
     @classmethod
     def write(self, model, liste_a_ecrire: [], *args, **kwargs):
 
-        print(f'nom de la table = {model().name}')
+        # print(f'nom de la table = {model().name}')
 
 
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
@@ -486,24 +499,28 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
         with Sender('questdb', 9009) as sender:
             ultra_dataframe = liste_a_ecrire[0]
+            # print(ultra_dataframe)
             if len(liste_a_ecrire) > 1:
                 for i in liste_a_ecrire[1:]:
-                    ultra_dataframe.merge(i)
+                    ultra_dataframe = pd.concat([ultra_dataframe, i], axis=0)
                     # print(f'ultra_dataframe = {ultra_dataframe}')
                 debut = time.time()
                 sender.dataframe(
                     ultra_dataframe,
                     table_name=model().name,  # Table name to insert into.
-                    symbols=['id_site'],  # Columns to be inserted as SYMBOL types.
-                    at='horodate')
+                    symbols=['id_site'],
+                    at='date_reception_flux')
+                # sender.dataframe(
+                #     ultra_dataframe,
+                #     table_name=model().name)
                 fin = time.time()
             else:
                 debut = time.time()
                 sender.dataframe(
                     ultra_dataframe,
                     table_name=model().name,  # Table name to insert into.
-                    symbols=['id_site'],  # Columns to be inserted as SYMBOL types.
-                    at='horodate')
+                    symbols=['id_site'],
+                    at='date_reception_flux')
                 fin = time.time()
 
         return fin - debut
@@ -601,16 +618,16 @@ class Interfaceinfluxdb(InterfaceQueryDb):
 
             query = f'from(bucket:"test") |> range(start: {localise_datetime(dt.datetime(1980, 1, 1)).isoformat()}, stop: {localise_datetime(dt.datetime(2077, 1, 1)).isoformat()}) |> filter(fn: (r) => r.id_site == "{i}") |> last(column: "valeur")'
 
-            print(query)
+            # print(query)
 
             result = query_api.query(org="holmium", query=query)
 
             print(list(result[-1])[0]['horodate'])
             derniere_date = dt.datetime.strptime(list(result[-1])[0]['horodate'][0:-6], '%Y-%m-%d %H:%M:%S')
 
-            element, _ = generation_pour_ajout_donnees(1, derniere_date + dt.timedelta(minutes=5), derniere_date + dt.timedelta(minutes=5 * nombre_elements), model, 0, False, 'influxdb')
+            element, _ = generation_pour_ajout_donnees(1, derniere_date + dt.timedelta(minutes=5), derniere_date + dt.timedelta(minutes=5 * nombre_elements), model, i, False, 'influxdb')
 
-            liste_elements_a_inserer.append(element)
+            liste_elements_a_inserer.extend(element)
 
 
         print(liste_elements_a_inserer[0])

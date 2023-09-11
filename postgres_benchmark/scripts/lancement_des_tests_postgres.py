@@ -1,4 +1,5 @@
 import pandas as pd
+from django.db.models import Max
 from pymongo import MongoClient
 
 from benchmark import benchmark
@@ -9,6 +10,7 @@ from utils.localtime import localise_date
 
 
 def run():
+    # qs = TimeSerieElement.objects.values('id_site').annotate(max_horodate=Max('horodate')).values('id_site', 'max_horodate')
     flag = 0
     _dict = {
         "postgres": [TimeSerieElement]  #, TimeSerieElementDoubleIndexationHorodate],

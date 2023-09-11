@@ -9,7 +9,7 @@ from benchmark import benchmark, insertion_sans_saturer_la_ram
 from benchmark_app_for_databases.models import TimeSerieElementMongo, TimeSerieElementMongoIndexSite, \
     TimeSerieElementMongoIndexHorodateSite, TimeSerieElementMongoIndexHorodate, TimeSerieElementTimescale, \
     TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSitePartition, \
-    TimeSerieElementQuestdbIndexSite
+    TimeSerieElementQuestdbIndexSite, TimeserieElementInflux
 from postgres_benchmark.models import *
 # from utils.localtime import localise_date
 from utils.profile import ProfilerHandler
@@ -17,17 +17,19 @@ from utils.profile import ProfilerHandler
 profiler = ProfilerHandler(print_our_code_only=True, sortby='cumtime', print_callers=True, print_callees=True,
                                output_file=f'./tmp/perf_report_{dt.datetime.now()}.txt',
                                output_table=f'./tmp/perf_table_{dt.datetime.now()}.csv')
+
+
 def run():
 
     _dict = {
-        # "postgres": [TimeSerieElementNonPartitionne, TimeSerieElementDoubleIndexationHorodateNonPartitionne,
-        #              TimeSerieElementDoubleIndexationSiteNonPartitionne, TimeSerieElementTripleIndexationNonPartitionne,
-        #              TimeSerieElement, TimeSerieElementIndexationHorodate, TimeSerieElementDoubleIndexationSite,
-        #              TimeSerieElementTripleIndexation],
-        "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite,TimeSerieElementMongoIndexHorodateSite],
+        "postgres": [TimeSerieElementNonPartitionne, TimeSerieElementDoubleIndexationHorodateNonPartitionne,
+                     TimeSerieElementDoubleIndexationSiteNonPartitionne, TimeSerieElementTripleIndexationNonPartitionne,
+                     TimeSerieElement, TimeSerieElementIndexationHorodate, TimeSerieElementDoubleIndexationSite,
+                     TimeSerieElementTripleIndexation],
+        "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite, TimeSerieElementMongoIndexHorodateSite],
         "timescale": [TimeSerieElementTimescale],
         'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition]
-        # 'influxdb': [TimeserieElementInflux]
+        'influxdb': [TimeserieElementInflux]
 
     }
 
@@ -35,14 +37,13 @@ def run():
     # gc.set_debug(gc.DEBUG_STATS)  # gc.DEBUG_COLLECTABLE  gc.DEBUG_STATS gc.DEBUG_LEAK
 
     # print(f'le ramasse miettes est: {gc.isenabled()}')
-    date_depart_population = dt.datetime(2020, 1, 1)
+    date_depart_population = dt.datetime(2023, 1, 1)
     date_fin_population = dt.datetime(2023, 7, 31)
     population_base = 10
-    ecart_aleatoire = 100
+    ecart_aleatoire = 10
 
     try:
         for database, models in _dict.items():
-            print('jaj')
             # print('lecture un courbe')
             insertion_sans_saturer_la_ram(database, population_base, models, date_depart_population, date_fin_population, 0, True, ecart_aleatoire)
 
@@ -61,7 +62,7 @@ def run():
             # liste_performances.extend(perfs)
             print('ecriture un element')
             liste_performances.extend(
-                benchmark(database, models, 1, 'element', 'ecriture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1), population_base))
+                benchmark(database, models, 1, 'element', 'ecriture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1), population_base, 5))
 
             print('update un element')
             liste_performances.extend(
