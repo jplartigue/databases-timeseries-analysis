@@ -115,7 +115,7 @@ def benchmark(base: str, models: list, nombre_elements: int,
                                                                    date_fin_operation, i, identifiant_max, True, base)
             else:
                 elements_a_inserer = generation_pour_ajout_donnees(nombre_elements, date_depart_operation, date_fin_operation, i, identifiant_max, False, base)
-            i.interface.
+            i.interface.write(i, elements_a_inserer)
         temps, identifiant_max = insertion_sans_saturer_la_ram(base, nombre_elements, models, date_depart_operation, date_fin_operation, 0, False, 0)
         for current_model in range(len(models)):
             resultat_test.append([base, temps[current_model], f"update de {nombre_elements} element de type {type_element}", models[current_model].__name__])
