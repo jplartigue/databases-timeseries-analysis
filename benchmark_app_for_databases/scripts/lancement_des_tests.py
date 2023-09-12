@@ -33,9 +33,7 @@ def run():
     }
 
     liste_performances = []
-    # gc.set_debug(gc.DEBUG_STATS)  # gc.DEBUG_COLLECTABLE  gc.DEBUG_STATS gc.DEBUG_LEAK
 
-    # print(f'le ramasse miettes est: {gc.isenabled()}')
     date_depart_population = dt.datetime(2021, 1, 1)
     date_fin_population = dt.datetime(2023, 7, 31)
     population_base = 10
@@ -43,7 +41,6 @@ def run():
 
     try:
         for database, models in _dict.items():
-            # print('lecture un courbe')
             insertion_sans_saturer_la_ram(database, population_base, models, date_depart_population, date_fin_population, 0, True, ecart_aleatoire)
 
             # kwargs = {

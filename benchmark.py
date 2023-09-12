@@ -1,6 +1,5 @@
 from benchmark_app_for_databases.interfaces_bases_de_donnees import *
 from generation_donnes import generation_donnees
-from utils.localtime import localise_date
 
 
 def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
@@ -17,22 +16,17 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
         export = True
     else:
         export = False
-    print(f'models={models}')
     for current_model in models:
-        print(f'base={base}')
         if population:
             identifiant_max = 0
         else:
             identifiant_max = identifiant_original
         current = 0
         while current != nombre_sites:
-            print(f'current={current}\nnombre_sites={nombre_sites}')
 
             liste_elements, identifiant_max = generation_donnees(min(limite_courbes_en_ram, nombre_sites-current),
                                                                  date_debut, date_fin, current_model, identifiant_max, export, base, rand_days)
-            print("paré pour insertion en base")
             temps = current_model.interface.write(current_model, liste_elements)
-            print("insertion réussie")
             liste_elements.clear()
             current += min(limite_courbes_en_ram, nombre_sites - current)
 

@@ -3,28 +3,15 @@ import gc
 import os
 import time
 from zoneinfo import ZoneInfo
-
 import pymongo
-from pympler import tracker
 import pandas as pd
-
-from influxdb import DataFrameClient
-
-from psycopg2.extras import execute_batch
 from pymongo import MongoClient
 import psycopg2 as pg
-
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
-
-
-
-
 from generation_donnes import generation_donnees, generation_pour_ajout_donnees
 from utils.interface_query_db import InterfaceQueryDb
-
 from questdb.ingress import Sender
-
 from utils.localtime import localise_datetime
 
 
@@ -91,7 +78,6 @@ class InterfacePostgres(InterfaceQueryDb):
         for i in liste_a_ecrire:
             debut = time.time()
             model.objects.from_csv(i)
-            # model.objects.bulk_create(liste_a_ecrire, batch_size=1000000)
             fin = time.time()
             temps = temps + (fin - debut)
             os.remove(i)
@@ -142,16 +128,11 @@ class InterfaceTimescale(InterfaceQueryDb):
                                                  **kwargs):
         liste = []
         for i in range(nombre_courbes):
-            print('récupération de la dernière entrée')
             derniere_entree = model.objects.filter(id_site=i).latest("horodate").horodate
-            # print(model.objects.filter(id_site=i).latest("horodate"))
-            print('récupération terminée')
             elements_a_inserer, _ = generation_pour_ajout_donnees(1, derniere_entree + dt.timedelta(minutes=5),
                                                        derniere_entree + dt.timedelta(minutes=5 * nombre_elements),
                                                        model, i, False, 'timescale')
-            print('génération de données terminée')
             liste.extend(elements_a_inserer)
-        print(liste)
         debut = time.time()
         model.objects.bulk_create(liste, batch_size=20000)
         fin = time.time()
@@ -165,25 +146,11 @@ class InterfaceTimescale(InterfaceQueryDb):
         temps = 0.0
         for i in liste_a_ecrire:
             debut = time.time()
-            print(len(liste_a_ecrire))
-            print('debut de l"insertion')
             model.object_copy.from_csv(i)
-            print('fin de l"insertion')
             fin = time.time()
             temps = temps + (fin - debut)
             os.remove(i)
-            print(f'temps={temps}')
         return temps
-
-        # debut = time.time()
-        # print(len(liste_a_ecrire))
-        # print('début du bulk create')
-        # # model.objects.bulk_create(liste_a_ecrire[0:10], batch_size=200000)
-        # model.objects.bulk_create(liste_a_ecrire, batch_size=200000)
-        # print('fin du bulk create')
-        # fin = time.time()
-        # print(f'temps={fin - debut}')
-        # return fin - debut
 
 
 class InterfaceMongo(InterfaceQueryDb):
@@ -209,8 +176,6 @@ class InterfaceMongo(InterfaceQueryDb):
         debut = time.time()
         _ = list(collection.find(
             {"id_site": {'$in': identifiants_sites}, "horodate": timestamp.astimezone(ZoneInfo("UTC"))}))
-        # for i in collection.find({"id_site": {'$in': identifiants_sites}, "horodate": timestamp.astimezone(ZoneInfo("UTC"))}):
-        #     print(i)
         fin = time.time()
         return fin - debut
 
@@ -237,8 +202,6 @@ class InterfaceMongo(InterfaceQueryDb):
         _ = list(collection.find({"id_site": {'$in': identifiants_sites},
                                   "horodate": {'$lte': date_debut.astimezone(ZoneInfo("UTC")),
                                                '$gte': date_fin.astimezone(ZoneInfo("UTC"))}}))
-        # for i in collection.find({"id_site": {'$in': identifiants_sites}, "horodate": {'$lte': date_fin.astimezone(ZoneInfo("UTC")), '$gte': date_debut.astimezone(ZoneInfo("UTC"))}}):
-        #     print(i)
         fin = time.time()
         return fin - debut
 
@@ -305,8 +268,6 @@ class InterfaceMongo(InterfaceQueryDb):
 
                 if derniere_entree < k['horodate']:
                     derniere_entree = k['horodate']
-                # derniere_entree = k
-            # derniere_entree = collection.find({"id_site": i}).sort([{'horodate', pymongo.DESCENDING}]).limit(1)['horodate']
             print(f'date ultime = {derniere_entree}')
             element_a_inserer, _ = generation_donnees(1,
                                                       derniere_entree + dt.timedelta(minutes=5),
@@ -359,10 +320,8 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
         with pg.connect(conn_str) as connection:
-            # Open a cursor to perform database operations
 
             with connection.cursor() as cur:
-                # Query the database and obtain data as Python objects.
                 timestamp = int(timestamp.timestamp() * 1000)
 
                 liste = '('
@@ -378,12 +337,7 @@ class InterfaceQuestdb(InterfaceQueryDb):
                 debut = time.time()
                 cur.execute(f"SELECT * FROM {model().name} WHERE horodate = {timestamp} AND id_site IN {liste};")
                 records = cur.fetchall()
-                # print(f'records = {records}')
                 fin = time.time()
-
-        # debut = time.time()
-        # _ = list(model.objects.filter(id_site__in=identifiants_sites, horodate=timestamp))
-        # fin = time.time()
         return fin - debut
 
     @classmethod
@@ -391,10 +345,8 @@ class InterfaceQuestdb(InterfaceQueryDb):
                            *args, **kwargs):
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
         with pg.connect(conn_str) as connection:
-            # Open a cursor to perform database operations
 
             with connection.cursor() as cur:
-                # Query the database and obtain data as Python objects.
                 date_debut = int(date_debut.timestamp() * 1000000)
                 date_fin = int(date_fin.timestamp() * 1000000)
 
@@ -419,10 +371,8 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
         with pg.connect(conn_str) as connection:
-            # Open a cursor to perform database operations
 
             with connection.cursor() as cur:
-                # Query the database and obtain data as Python objects.
                 timestamp = int(timestamp.timestamp() * 1000000)
 
                 liste = '('
@@ -433,10 +383,6 @@ class InterfaceQuestdb(InterfaceQueryDb):
                 debut = time.time()
                 cur.execute(f"UPDATE {model().name} SET valeur=42 WHERE horodate = {timestamp} AND id_site IN {liste};")
                 fin = time.time()
-
-        # debut = time.time()
-        # _ = list(model.objects.filter(id_site__in=identifiants_sites, horodate=timestamp))
-        # fin = time.time()
         return fin - debut
 
     @classmethod
@@ -444,10 +390,8 @@ class InterfaceQuestdb(InterfaceQueryDb):
                              *args, **kwargs):
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
         with pg.connect(conn_str) as connection:
-            # Open a cursor to perform database operations
 
             with connection.cursor() as cur:
-                # Query the database and obtain data as Python objects.
                 date_debut = int(date_debut.timestamp() * 1000000)
                 date_fin = int(date_fin.timestamp() * 1000000)
 
@@ -459,13 +403,9 @@ class InterfaceQuestdb(InterfaceQueryDb):
                 debut = time.time()
                 cur.execute(f"UPDATE {model().name} SET valeur=42 WHERE horodate >= {date_debut} AND horodate <= {date_fin} AND id_site IN {liste};")
                 records = cur.fetchall()
-                # print(f'records = {records}')
                 fin = time.time()
                 del records
 
-        # debut = time.time()
-        # _ = list(model.objects.filter(id_site__in=identifiants_sites, horodate=timestamp))
-        # fin = time.time()
         gc.collect()
         return fin - debut
 
@@ -480,26 +420,11 @@ class InterfaceQuestdb(InterfaceQueryDb):
                 print(f'max = {nombre_courbes}')
                 liste = '('
                 for i in range(nombre_courbes):
-                    # cur.execute(f"SELECT MAX(horodate) FROM {model.name} WHERE id_site IN ('{i}');")  # WHERE id_site IN {liste}
-                    # cur.execute(f"SELECT id_site FROM {model.name};")
-                    # records = cur.fetchall()
-                    # for j in records:
-                    #     print(j)
-                    # liste.append(records[0])
-                    # time.sleep(20)
-                    # print(liste)
                     liste = liste + f"'{i}',"
                 liste = liste[0:-1] + ')'
-                # print(f"\n\n\nSELECT MAX(horodate) FROM {model().name} WHERE id_site IN {liste} GROUP BY id_site;\n\n\n")
 
                 cur.execute(f"SELECT MAX(horodate) FROM {model().name} WHERE id_site IN {liste} GROUP BY id_site;")
-                # cur.execute(f'SELECT * FROM {model.name} WHERE id_site IN {liste};')  #WHERE id_site IN {liste}
                 records = cur.fetchall()
-
-                # print(f'toutes les dates {records[-10:]}')
-                # print(f'element = {records[0][0]} de type {type(records[0][0])}')
-                # time.sleep(20)
-                # print(f'element = {records[0][0]}')
 
                 site = 0
                 for i in records:
@@ -508,7 +433,6 @@ class InterfaceQuestdb(InterfaceQueryDb):
                     site += 1
 
 
-        print(f'liste elements a insérer: {liste_elements_a_inserer}')
         del records
         temps = self.write(model, liste_elements_a_inserer)
 
@@ -517,9 +441,6 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
     @classmethod
     def write(self, model, liste_a_ecrire: [], *args, **kwargs):
-
-        # print(f'nom de la table = {model().name}')
-
 
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
         with pg.connect(conn_str) as connection:
@@ -537,26 +458,21 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
         with Sender('questdb', 9009) as sender:
             ultra_dataframe = liste_a_ecrire[0]
-            # print(ultra_dataframe)
             if len(liste_a_ecrire) > 1:
                 for i in liste_a_ecrire[1:]:
                     ultra_dataframe = pd.concat([ultra_dataframe, i], axis=0)
-                    # print(f'ultra_dataframe = {ultra_dataframe}')
                 debut = time.time()
                 sender.dataframe(
                     ultra_dataframe,
-                    table_name=model().name,  # Table name to insert into.
+                    table_name=model().name,
                     symbols=['id_site'],
                     at='date_reception_flux')
-                # sender.dataframe(
-                #     ultra_dataframe,
-                #     table_name=model().name)
                 fin = time.time()
             else:
                 debut = time.time()
                 sender.dataframe(
                     ultra_dataframe,
-                    table_name=model().name,  # Table name to insert into.
+                    table_name=model().name,
                     symbols=['id_site'],
                     at='date_reception_flux')
                 fin = time.time()
@@ -640,7 +556,7 @@ class Interfaceinfluxdb(InterfaceQueryDb):
         return temps
 
     @classmethod
-    def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args, **kwargs):  # |> max()
+    def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args, **kwargs):
 
         client = influxdb_client.InfluxDBClient(
             url="http://influxdb:8086",
@@ -653,22 +569,11 @@ class Interfaceinfluxdb(InterfaceQueryDb):
         query_api = client.query_api()
         liste_elements_a_inserer = []
         for i in range(nombre_courbes):
-
             query = f'from(bucket:"test") |> range(start: {localise_datetime(dt.datetime(1980, 1, 1)).isoformat()}, stop: {localise_datetime(dt.datetime(2077, 1, 1)).isoformat()}) |> filter(fn: (r) => r.id_site == "{i}") |> last(column: "valeur")'
-
-            # print(query)
-
             result = query_api.query(org="holmium", query=query)
-
-            print(list(result[-1])[0]['horodate'])
             derniere_date = dt.datetime.strptime(list(result[-1])[0]['horodate'][0:-6], '%Y-%m-%d %H:%M:%S')
-
             element, _ = generation_pour_ajout_donnees(1, derniere_date + dt.timedelta(minutes=5), derniere_date + dt.timedelta(minutes=5 * nombre_elements), model, i, False, 'influxdb')
-
             liste_elements_a_inserer.extend(element)
-
-
-        print(liste_elements_a_inserer[0])
         client.__del__()
         temps = self.write(model, liste_elements_a_inserer, premiere_fois=False)
 
@@ -689,48 +594,8 @@ class Interfaceinfluxdb(InterfaceQueryDb):
         if len(liste_a_ecrire) > 1:
             for i in liste_a_ecrire[1:]:
                 ultra_dataframe = pd.concat([ultra_dataframe, i], axis=0)
-        # liste = []
-        # for i in liste_a_ecrire:
-        #     liste.append(influxdb_client.Point("test").tag("identifiant_flux", i['identifiant_flux']).field("id_site", i['id_site']).time(i['horodate']).field('date_reception_flux', str(i['date_reception_flux'])).field('dernier_flux', False).field('valeur', i['valeur']))
-        print('début de l"écriture')
         debut = time.time()
         write_api.write(bucket="test", org="holmium", record=ultra_dataframe, data_frame_measurement_name='test', data_frame_tag_columns=["id_site", "horodate", "identifiant_flux", "dernier_flux", "valeur"], data_frame_timestamp_column="horodate")  # , data_frame_measurement_name='test'    , data_frame_tag_columns=['id_site', 'dernier_flux', 'identifiant_flux', 'date_reception_flux', 'horodate', 'valeur']   , data_frame_measurement_name='test'
         fin = time.time()
-        print('fin de l"écriture')
-
-        # _write_client.write("my-bucket", "my-org", record=_data_frame, data_frame_measurement_name='h2o_feet', data_frame_tag_columns=['location'])
-
-
-        # query_api = client.query_api()
-        #
-        # query = f'from(bucket:"test") |> range(start: {localise_datetime(dt.datetime(2021, 1, 1)).isoformat()}, stop: {localise_datetime(dt.datetime.now()).isoformat()})'
-        #
-        # query = f'from(bucket:"test") |> range(start: {localise_datetime(dt.datetime(2021, 1, 1)).isoformat()}, stop: {localise_datetime(dt.datetime(2023, 9, 1)).isoformat()})   |> filter(fn: (r) => r.id_site =~ /[0 - 2]$/)'  # |> max(column: "_value")'
-        #
-        # print(query)
-        #
-        # result = query_api.query(org="holmium", query=query)
-        #
-        # # print(result)
-        #
-        # verif = []
-        #
-        # for i in result:
-        #     verif.append(i)
-        # print(f'nombre d"éléments en base = {len(verif)}\nverif = {verif[0]}\nverif2 = {list(verif[-1])[-1]}')  #\nverif2 = {list(verif[-1])[-2]}
-
-
-        # client = DataFrameClient('influxdb',8086, 'test', 'password', "test")
-        #
-        # if kwargs['premiere_fois'] == True:
-        #     client.create_database('test')
-        #
-        # ultra_dataframe = pd.DataFrame()
-        # for i in liste_a_ecrire:
-        #     ultra_dataframe.merge(i)
-        # debut = time.time()
-        # client.write_points(ultra_dataframe, 'test', protocol='line')
-        # fin = time.time()
-
         client.__del__()
         return fin - debut
