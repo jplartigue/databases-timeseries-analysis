@@ -46,64 +46,19 @@ class TimeSerieElementTimescale(TimescaleModel):
 
 
 class TimeSerieElementMongo(mod.Model):
-    id_site = mod.BigIntegerField()
-    identifiant_flux = mod.CharField(max_length=50)
-    horodate = mod.DateTimeField()
-    date_reception_flux = mod.DateTimeField()
-    dernier_flux = mod.BooleanField()
-    valeur = mod.FloatField()
-    objects = mod.DjongoManager()
     interface = InterfaceMongo
 
-    class Meta:
-        _use_db = 'mongo'
-        ordering = ("horodate",)
-        app_label = 'benchmark_app_for_databases'
+
 
 class TimeSerieElementMongoIndexHorodate(models.Model):
-    id_site = mod.BigIntegerField()
-    identifiant_flux = mod.CharField(max_length=50)
-    horodate = mod.DateTimeField()
-    date_reception_flux = mod.DateTimeField()
-    dernier_flux = mod.BooleanField()
-    valeur = mod.FloatField()
-    objects = mod.DjongoManager()
     interface = InterfaceMongo
-
-    class Meta:
-        _use_db = 'mongo'
-        ordering = ("horodate",)
-        app_label = 'benchmark_app_for_databases'
 
 class TimeSerieElementMongoIndexSite(models.Model):
-    id_site = mod.BigIntegerField()
-    identifiant_flux = mod.CharField(max_length=50)
-    horodate = mod.DateTimeField()
-    date_reception_flux = mod.DateTimeField()
-    dernier_flux = mod.BooleanField()
-    valeur = mod.FloatField()
-    objects = mod.DjongoManager()
     interface = InterfaceMongo
 
-    class Meta:
-        _use_db = 'mongo'
-        ordering = ("horodate",)
-        app_label = 'benchmark_app_for_databases'
 
 class TimeSerieElementMongoIndexHorodateSite(models.Model):
-    id_site = mod.BigIntegerField()
-    identifiant_flux = mod.CharField(max_length=50)
-    horodate = mod.DateTimeField()
-    date_reception_flux = mod.DateTimeField()
-    dernier_flux = mod.BooleanField()
-    valeur = mod.FloatField()
-    objects = mod.DjongoManager()
     interface = InterfaceMongo
-
-    class Meta:
-        _use_db = 'mongo'
-        ordering = ("horodate",)
-        app_label = 'benchmark_app_for_databases'
 
 
 class TimeSerieElementQuestdb(models.Model):

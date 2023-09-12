@@ -11,7 +11,6 @@ from benchmark_app_for_databases.models import TimeSerieElementMongo, TimeSerieE
     TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSitePartition, \
     TimeSerieElementQuestdbIndexSite, TimeserieElementInflux
 from postgres_benchmark.models import *
-# from utils.localtime import localise_date
 from utils.profile import ProfilerHandler
 
 profiler = ProfilerHandler(print_our_code_only=True, sortby='cumtime', print_callers=True, print_callees=True,

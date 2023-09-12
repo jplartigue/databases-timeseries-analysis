@@ -353,3 +353,83 @@ f'from(bucket:"test") |> range(start: {localise_datetime(dt.datetime(1980, 1, 1)
 !attention! c'est contre-intuitif mais la colonne passée en argument de la fonction "last()" est la colonne utilisée pour vérifier qu'il y a bien une valeur stockée (et donc que la ligne est bien valide/non-vide selon influxdb).\
 donc en écrivant `last(column: "valeur")` je spécifie que last doit regarder la dernière ligne dont le champ "valeur" n'est pas vide.
 
+SUITE DU FONCTIONNEMENT DU BENCHMARK:
+
+les interfaces renvoient les temps qu'ont pris chaque opérations. les temps sont mesurés au plus bas niveau, à comprendre que je mesure le temps d'exécution uniquement de la ligne où la requete est exécutée. ce temps est retourné à la fonction benchmark (ou à la fonction fonction_lecture qui la renvoie à la fonction benchmark). la fonction bechmark remplit une liste qu'elle retourne pour que la variable liste_performances la récupère. cette dernière est transformée en pandas_dataframe puis cette pandas_dataframe est écrite sur le disque au format csv avec un nom qui précise le nombre de courbes de remplissage, les dates de remplissage et la date à laquelle le test s'est terminé.
+ce fichier contient les lignes correspondant aux tests, la première colonne qui correspond à la base testée, la deuxième au temps du test, la troisième à une très brève description du test (ex: ecriture de 1 element de type element) et enfin la dernière colonne avec le model utilisé qui permet de savoir quelle configuration de la base de données est testée.
+
+## point sur les models:
+
+les models, comme dit (beaucoup) plus tôt, sont utilisés pour la configuration des bases de données.\
+pour timescale et postgres, ce sont directement les models qui permettent de paramétrer les bases de données mais pour les autres bases c'est dans la fonction write que ça se passe (comme dans l'exemple avec quesdb où je parlais de l'insertion).\
+les noms permettent de savoir à quoi vous avez affaire et se présentent comme suit:\
+"TimeSerieElementNomBaseDeDonneesIndexParametreIndexation"\
+ainsi le model réel "TimeSerieElementMongoIndexHorodate" est le model utilisé pour mongodb dans le cadre d'une indexation sur le champ horodate.\
+chaque base à un model qui ne spécifie pas d'index et correspond à une configuration de base.
+
+## configurations par bases:
+
+### postgres:
+
+il existe deux classes de models pour postgres: les partitionnés et les non partitionnés.\
+les premiers héritent de la classe TimeseriesCommon et les seconds héritent de TimeseriesCommonNonPartitionne.\
+les héritiers de TimeseriesCommon comportent aussi une classe fille PartitioningMeta qui permet de spécifier le type de partitionning à appliquer (ici je n'utilise que le partitionning par RANGE car c'est le seul qui ai du sens dans un contexte de timeseries).
+
+tous ont cependant une classe Meta qui permet de definir l'indexation et l'ordination des données. là aussi  pas vraiment de diversité car tous les indexes sont des BrinIndex (je me suis basé sur un article de amazon qui montre la supériorité des BrinIndex sur le classique Btree et à la lecture des différents index disponibles je n'ai pas trouvé les autres types pertinents).
+exemple d'une classe Meta:
+````
+    class Meta:
+        ordering = ['horodate',]
+        indexes = [
+            BrinIndex(
+                fields=('horodate',),
+                pages_per_range=12
+            )
+        ]
+````
+le paramètre "fields" renseigne les champs qu'il faut indexer et "pages_per_range" renseigne le nombre de pages qui seront créées par table (ici c'est 12 car ce bout de code provient d'un model qui hérite de TimeseriesCommon donc chaque table correspond à 1an de données au moment où j'écris ces lignes, donc en découpant en 12 on a un brin index par mois).\
+le souci de la config postgres est qu'elle est statique donc pour la changer il faut refaire les migrations avec pgmigrations, refaire les partitions à la main et refaire l'application des migrations. ce qui est très lourd.\
+à l'heure actuelle postgres est configuré pour accueillir des données entre début 2021 et début 2024.
+
+### timescale:
+
+les configurations multiples n'étant pas possible sur timescale (de la façon dont je m'y suis pris en tout cas) il n'y a qu'une seule configuration qui est testée avec indexation sur l'horodate et l'id_site.
+
+### mongodb:
+
+pour mongodb il y a 4 configurations différentes:
+- aucune indexation
+- l'idexation par horodate
+- l'indexation par id_site
+- l'indexation sur horodate et id_site
+
+pour configurer mongodb avec indexation j'appelle la méthode create_index() sur la bonne collection comme dans l'exemple suivant:
+````
+collection.create_index('horodate', unique=False)
+collection.create_index('id_site', unique=False)
+````
+
+### questdb:
+
+la configuration de questdb se fait à la création de la table dans la méthode write():
+````
+match model.__name__:
+                    case "TimeserieElementQuestdbPartition":
+                        cur.execute(f'CREATE TABLE IF NOT EXISTS {model().name} (horodate TIMESTAMP, identifiant_flux INT, id_site SYMBOL, date_reception_flux TIMESTAMP, dernier_flux BOOLEAN, valeur FLOAT) timestamp(horodate) PARTITION BY MONTH;')
+                    case "TimeSerieElementQuestdb":
+                        cur.execute(f'CREATE TABLE IF NOT EXISTS {model().name} (horodate TIMESTAMP, identifiant_flux INT, id_site SYMBOL, date_reception_flux TIMESTAMP, dernier_flux BOOLEAN, valeur FLOAT);')
+                    case "TimeSerieElementQuestdbIndexSite":
+                        cur.execute(f'CREATE TABLE IF NOT EXISTS {model().name} (horodate TIMESTAMP, identifiant_flux INT, id_site SYMBOL INDEX CAPACITY 1000000, date_reception_flux TIMESTAMP, dernier_flux BOOLEAN, valeur FLOAT);')
+                    case _:
+                        cur.execute(f'CREATE TABLE IF NOT EXISTS {model().name} (horodate TIMESTAMP, identifiant_flux INT, id_site SYMBOL INDEX CAPACITY 1000000, date_reception_flux TIMESTAMP, dernier_flux BOOLEAN, valeur FLOAT) timestamp(horodate) PARTITION BY MONTH;')
+
+````
+l'indexation ne peut se faire que sur des types SYMBOL qui sont basiquement des strings donc je ne peux pas proposer d'indexation sur l'horodate qui soit pertienente avec questdb donc il n'y a que ce type d'indexation et on a pas le choix du type d'indexation, c'est RANGE selon la documentation.\
+l'indexation est mise en place en précisant INDEX après le type de la colonne correspondante et en mettant la CAPACITY ("When a symbol column is indexed, an additional index capacity can be defined to specify how many row IDs to store in a single storage block on disk" extraitn de la documentation que je suis incapable d'expliquer).\
+le partitionnement est mis en place en appelant la fonction timestamp() et en lui passant le nom de la colonne qui contient la date (obligatoirement au format TIMESTAMP qui est une epoch en ns) et en indiquant si on partitionne par YEAR, MONTH, WEEK, DAY, ou HOUR.
+
+### influxdb:
+
+je n'ai pas encore trouvé le moyen de faire du partitionning ou de l'indexation sur influxdb concrètement et proprement à l'heure actuelle mais la documentation en parle donc c'est théoriquement possible.\
+techniquement ce que je fais avec "data_frame_tag_columns" c'est de l'indexation mais le souci c'est que si la colonne ne se trouve pas dans ce paramètre alors sa valeur est perdue.\
+pour le partitionnement par contre je n'ai aucune piste sérieuse à l'heure où j'écris ces lignes.
