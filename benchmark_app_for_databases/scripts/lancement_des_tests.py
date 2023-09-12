@@ -28,7 +28,7 @@ def run():
                      TimeSerieElementTripleIndexation],
         "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite, TimeSerieElementMongoIndexHorodateSite],
         "timescale": [TimeSerieElementTimescale],
-        'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition]
+        'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition],
         'influxdb': [TimeserieElementInflux]
 
     }
@@ -37,7 +37,7 @@ def run():
     # gc.set_debug(gc.DEBUG_STATS)  # gc.DEBUG_COLLECTABLE  gc.DEBUG_STATS gc.DEBUG_LEAK
 
     # print(f'le ramasse miettes est: {gc.isenabled()}')
-    date_depart_population = dt.datetime(2023, 1, 1)
+    date_depart_population = dt.datetime(2021, 1, 1)
     date_fin_population = dt.datetime(2023, 7, 31)
     population_base = 10
     ecart_aleatoire = 10

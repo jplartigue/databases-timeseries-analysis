@@ -40,8 +40,7 @@ class InterfacePostgres(InterfaceQueryDb):
         return fin - debut
 
     @classmethod
-    def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [str],
-                           *args, **kwargs):
+    def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [str], *args, **kwargs):
 
         for i in range(10):
             _ = list(model.objects.filter(id_site__in=identifiants_sites, horodate__gte=date_debut, horodate__lte=date_fin))
@@ -67,8 +66,7 @@ class InterfacePostgres(InterfaceQueryDb):
         return fin - debut
 
     @classmethod
-    def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args,
-                                                 **kwargs):
+    def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args, **kwargs):
         liste = []
         for i in range(nombre_courbes):
             derniere_entree = model.objects.filter(id_site=i).latest("horodate").horodate
@@ -194,7 +192,15 @@ class InterfaceMongo(InterfaceQueryDb):
     def read_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [int], *args, **kwargs):
         client = MongoClient("mongo", 27017)
         db = client.mongo
-        collection = db.TimeSerieElementMongo
+        match model.__name__:
+            case "TimeSerieElementMongo":
+                collection = db.TimeSerieElementMongo
+            case "TimeSerieElementMongoIndexHorodate":
+                collection = db.TimeSerieElementMongoIndexHorodate
+            case "TimeSerieElementMongoIndexSite":
+                collection = db.TimeSerieElementMongoIndexSite
+            case _:
+                collection = db.TimeSerieElementMongoIndexHorodateSite
 
         for i in range(10):
             _ = list(collection.find(
@@ -213,7 +219,15 @@ class InterfaceMongo(InterfaceQueryDb):
                            *args, **kwargs):
         client = MongoClient("mongo", 27017)
         db = client.mongo
-        collection = db.TimeSerieElementMongo
+        match model.__name__:
+            case "TimeSerieElementMongo":
+                collection = db.TimeSerieElementMongo
+            case "TimeSerieElementMongoIndexHorodate":
+                collection = db.TimeSerieElementMongoIndexHorodate
+            case "TimeSerieElementMongoIndexSite":
+                collection = db.TimeSerieElementMongoIndexSite
+            case _:
+                collection = db.TimeSerieElementMongoIndexHorodateSite
 
         for i in range(10):
             _ = list(collection.find({"id_site": {'$in': identifiants_sites},
@@ -232,7 +246,15 @@ class InterfaceMongo(InterfaceQueryDb):
     def update_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [int], *args, **kwargs):
         client = MongoClient("mongo", 27017)
         db = client.mongo
-        collection = db.TimeSerieElementMongo
+        match model.__name__:
+            case "TimeSerieElementMongo":
+                collection = db.TimeSerieElementMongo
+            case "TimeSerieElementMongoIndexHorodate":
+                collection = db.TimeSerieElementMongoIndexHorodate
+            case "TimeSerieElementMongoIndexSite":
+                collection = db.TimeSerieElementMongoIndexSite
+            case _:
+                collection = db.TimeSerieElementMongoIndexHorodateSite
         debut = time.time()
         collection.update({'id_site': {'$in': identifiants_sites},
                            'horodate': timestamp},
@@ -245,7 +267,15 @@ class InterfaceMongo(InterfaceQueryDb):
                              *args, **kwargs):
         client = MongoClient("mongo", 27017)
         db = client.mongo
-        collection = db.TimeSerieElementMongo
+        match model.__name__:
+            case "TimeSerieElementMongo":
+                collection = db.TimeSerieElementMongo
+            case "TimeSerieElementMongoIndexHorodate":
+                collection = db.TimeSerieElementMongoIndexHorodate
+            case "TimeSerieElementMongoIndexSite":
+                collection = db.TimeSerieElementMongoIndexSite
+            case _:
+                collection = db.TimeSerieElementMongoIndexHorodateSite
         debut = time.time()
         collection.update({'id_site': {'$in': identifiants_sites},
                            'horodate': {'$gte': date_debut, '$lte': date_fin}},
@@ -258,7 +288,15 @@ class InterfaceMongo(InterfaceQueryDb):
                                                  **kwargs):
         client = MongoClient("mongo", 27017)
         db = client.mongo
-        collection = db.TimeSerieElementMongo
+        match model.__name__:
+            case "TimeSerieElementMongo":
+                collection = db.TimeSerieElementMongo
+            case "TimeSerieElementMongoIndexHorodate":
+                collection = db.TimeSerieElementMongoIndexHorodate
+            case "TimeSerieElementMongoIndexSite":
+                collection = db.TimeSerieElementMongoIndexSite
+            case _:
+                collection = db.TimeSerieElementMongoIndexHorodateSite
         print(f'liste des collections {db.list_collection_names()}')
         liste_elements_a_inserer = []
         for i in range(nombre_courbes):
@@ -484,7 +522,7 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
 
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
-        with pg.connect(conn_str) as connection:  #, autocommit=True
+        with pg.connect(conn_str) as connection:
 
             with connection.cursor() as cur:
                 match model.__name__:
