@@ -21,13 +21,13 @@ profiler = ProfilerHandler(print_our_code_only=True, sortby='cumtime', print_cal
 def run():
 
     _dict = {
-        # "postgres": [TimeSerieElementNonPartitionne, TimeSerieElementDoubleIndexationHorodateNonPartitionne,
-        #              TimeSerieElementDoubleIndexationSiteNonPartitionne, TimeSerieElementTripleIndexationNonPartitionne,
-        #              TimeSerieElement, TimeSerieElementIndexationHorodate, TimeSerieElementDoubleIndexationSite,
-        #              TimeSerieElementTripleIndexation],
-        # "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite, TimeSerieElementMongoIndexHorodateSite],
-        # "timescale": [TimeSerieElementTimescale],
-        # 'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition],
+        "postgres": [TimeSerieElementNonPartitionne, TimeSerieElementDoubleIndexationHorodateNonPartitionne,
+                     TimeSerieElementDoubleIndexationSiteNonPartitionne, TimeSerieElementTripleIndexationNonPartitionne,
+                     TimeSerieElement, TimeSerieElementIndexationHorodate, TimeSerieElementDoubleIndexationSite,
+                     TimeSerieElementTripleIndexation],
+        "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite, TimeSerieElementMongoIndexHorodateSite],
+        "timescale": [TimeSerieElementTimescale],
+        'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition],
         # 'influxdb': [TimeserieElementInflux]
 
     }

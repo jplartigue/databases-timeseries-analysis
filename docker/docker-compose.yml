@@ -57,7 +57,8 @@ services:
       - "8812"
       - "9009"
     restart: unless-stopped
-##################################################
+
+
   mongo:
     image: mongo
     restart: always
@@ -71,18 +72,6 @@ services:
     expose:
       - "27017"
 
-
-#  mongo-express:
-#      image: mongo-express
-#      restart: unless-stopped
-#      ports:
-#        - 8081:8081
-#      environment:
-#        ME_CONFIG_MONGODB_ADMINUSERNAME: test
-#        ME_CONFIG_MONGODB_ADMINPASSWORD: password
-#        ME_CONFIG_MONGODB_URL: mongodb://test:example@mongo:27017/
-
-#####################################################
 
   influxdb:
     image: influxdb:2.7.1

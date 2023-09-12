@@ -13,14 +13,14 @@ les bases de données disponibles sont:\
 
 pour utiliser l'outil il faut écrire le scénario de tests que vous voulez faire subir aux bases de données dans le script "lancement_des_tests.py" qui se trouve dans le dossier benchmark_app_for_databases/scripts.
 
-LE FICHIER DE LANCEMENT DES TESTS:
+## LE FICHIER DE LANCEMENT DES TESTS:
 
 le script présent dans ce fichier peut être découpé en 3 parties.\
 1) le dictionnaire des bases de données
 2) les variables de population
 3) le scénario
 
-LE DICTIONNAIRE DES BASES DE DONNÉES:
+## LE DICTIONNAIRE DES BASES DE DONNÉES:
 
 le dictionnaire des bases de données est là pour indiquer au programme les bases de données disponibles et les configurations à utiliser (s'il y en a plusieurs disponibles pour la base de données).
 Dans sa forme exaustive il ressemble à cela:
@@ -41,7 +41,7 @@ les clés correspondent au nom du host de la base de données et les éléments 
 ces models sont définis dans les fichiers "models" (celui de [postgres_benchmark](postgres_benchmark) pour les models de postgres ou celui de [benchmark_app_for_databases](benchmark_app_for_databases) pour les autres).\
 tous les éléments présents dans le dictionnaire seront utilisés par le programme, si vous ne voulez pas tester certaines bases ou configurations il faudra modifier ce dictionnaire (j'ai préféré me concentrer sur l'intégration des bases de données en priorité au détriment de la configuration du fichier de scénarios).
 
-LES VARIABLES DE POPULATION:
+## LES VARIABLES DE POPULATION:
 
 ````
     date_depart_population = dt.datetime(2020, 1, 1)
@@ -58,7 +58,7 @@ la variables "ecart_aleatoire" sert à introduire de l'aléatoire sur les dates 
 si on récapitule, avec l'exemple présenté plus haut, les base de données testées seront remplies avec 10 courbes de charge
 qui apparaitront aléatoirement et indépendament les unes des autres entre le 1/1/2020 et le 9/6/2020 et se finissent aléatoirement et indépendament les unes des autres entre le 20/04/2023 et le 31/07/2023.
 
-LE SCÉNARIO:
+## LE SCÉNARIO:
 
 la partie que je désigne par scénario est la partie "boucle":
 ````
@@ -75,7 +75,7 @@ l'écriture du scénario consite donc à appeler la fonction "benchmark" et à r
 
 cependant pour écrire votre scénario il nous faut faire un point sur la fonction "benchmark".
 
-LA FONCTION BENCHMARK:
+## LA FONCTION BENCHMARK:
 
 ````
 benchmark(base: str, models: list, nombre_elements: int, type_element: str, operation: str, date_depart_operation: dt.datetime, date_fin_operation: dt.datetime, remplissage_prealable: int, nombre_courbes: int=1)
@@ -91,7 +91,7 @@ la fonction "benchmark" s'utilise avec 8 paramètres obligatoires et 1 paramètr
 8) remplissage_prealable qui permet de dire au programme combien de courbes de charge sont déjà présentes dans la base (il faut le renseigner avec la variable "population_base")
 9) (optionnel) nombre_courbes sert à renseigner le nombre de courbes concernées par l'opération d'écriture d'élément(s).
 
-LES OPÉRATIONS:
+## LES OPÉRATIONS:
 
 je vais détailler les opérations un peu plus en détail dans cette partie.
 
@@ -104,7 +104,7 @@ une dernière chose importante pour ne pas avoir de mauvaises surprises:\
 les variables "taille_ram" et "limites_courbes_en_ram", qui se trouvent dans le fichier "benchmark", doivent être réglées en fonction de votre RAM.\
 je recommande par expérience de ne pas dépasser 10 si vous disposez de 16 Go de RAM.
 
-PARTIE TECHNIQUE:
+## PARTIE TECHNIQUE:
 
 en termes d'architecture l'exécution se déroule comme suit:\
 le script "lancement_des_tests" va dérouler les tests définis par l'utilisateur en faisant appel à la fonction "benchmark".\
@@ -113,7 +113,7 @@ les méthodes appelées en fonction de l'opération sont définies dans le fichi
 le fichier [generation_donnes.py](generation_donnes.py) abrite, lui les fonctions de génération de données que sont "generation_donnees" et "generation_pour_ajout_donnees". le sigleton ne permetant plus d'utiliser la même fonction pour populer une base et pour ajouter de nouyvelles données qui pourraient être en dehors de la période temporelle désignée lors du remplissage de la base.\
 
 
-POINT POSTGRES:
+## POINT POSTGRES:
 
 les models et migrations de postgresql sont stockés à part dans l'application/dossier [postgres_benchmark](postgres_benchmark) car pour pouvoir mettre en place le partitionning il a fallu recourir à la bibliothèque django-postgres-extra qui fait ses propres migrations via la commande "pgmakemigrations" et il faut en plus ajouter les partitions à la main dans les migrations comme suit:
 ````
@@ -128,7 +128,7 @@ il faut ajouter les partitions comme celle-ci dans la liste des opérations des 
 l'application des migration se fait par contre normalement en faisant appel à la fonction "migrate" de django.\
 les migrations sont appliquées automatiquement 10 secondes après le lancement du conteneur "outil_test".
 
-INTERFACES:
+## INTERFACES:
 
 les interfaces comportent toutes les 6 méthodes suivantes:
 - read_at_timestamp
@@ -138,7 +138,7 @@ les interfaces comportent toutes les 6 méthodes suivantes:
 - ajout_element_en_fin_de_courbe_de_charge
 - write
 
-READ_AT_TIMESTAMP:
+## READ_AT_TIMESTAMP:
 
 cette méthode a été pensée pour la lecture d'éléments/points uniques de courbes de charge et sera donc appelée si l'opération porte sur la lecture de points.\
 la signature de cette méthode est la suivante:
@@ -150,7 +150,7 @@ le paramètre model sert pour l'utilisation de l'ORM de django avec postgres et 
 le paramètre identifiants_sites est la liste des identifiants des sites sur lesquels la lecture s'effectuera. sa taille est égale au "nombre_elements" passé en paramètre de la fonction "benchmark". si le nombre d'éléments est de 5 par exemple, alors cette liste contiendra les identifiants 0, 1, 2, 3, 4.\
 donc si cette fonction est appelée pour lire plusieurs points, elle va chercher à lire le point sur chaque courbe qui correspond au timestamp fourni. la limite de cette méthode est donc que l'on ne peux pas demander à lire plus de points qu'il n'y a de courbes de charge en base. elle a été conçue pour lire très peu de points comparé à la taille de la base de données et donc obtenir des informations sur les accès sur des éléments individuels.
 
-READ_BETWEEN_DATES:
+## READ_BETWEEN_DATES:
 
 cette méthode a été créée pour lire des courbes de charge ou des portions entières de ces dernières et est appelée si l'opération de lecture porte sur un élément de type "courbe".\
 sa signature est la suivante:
@@ -162,7 +162,7 @@ les paramètres "date_debut" et "date_fin" sont les bornes temporelles de lectur
 idem pour le paramètre "identifiants_sites".\
 cette méthode va donc chercher à récupérer les points qui ont leurs "horodates" entre les dates fournies pour les courbes de charge dont l'identifiant du site est contenu dans la liste.
 
-UPDATE_AT_TIMESTAMP:
+## UPDATE_AT_TIMESTAMP:
 
 cette méthode a été créée pour mettre à jour un nombre limité de points. elle est donc appelée si l'opération update porte sur le type d'élément "element".\
 sa signature est identique à celle de la fonction "read_at_timestamp":
@@ -171,7 +171,7 @@ update_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [st
 ````
 son pricipe de fonctionnement et identique à celui de "read_at_timestamp" à la différence que cette méthode ne va pas lire mais mettre à jour le champ "valeur" des points qui correspondent aux critères en y injectant la valeur "42".
 
-UPDATE_BETWEEN_DATES:
+## UPDATE_BETWEEN_DATES:
 
 cette fonction est très proche de "read_between_dates" dans sa forme et son fonctionnement et est appelée si l'opération de mise à jour porte sur le type d'élément "courbe".\
 sa signature est la suivante:
@@ -180,7 +180,7 @@ update_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model
 ````
 les paramètres sont les mêmes que pour "read_between_dates" et le fonctionnement aussi. encore une fois à la différence que cette fonction ne va pas lire les valeurs mais mettre à jour leurs champs "valeur" avec la valeur "42".
 
-AJOUT_ELEMENT_EN_FIN_DE_COURBE_DE_CHARGE:
+## AJOUT_ELEMENT_EN_FIN_DE_COURBE_DE_CHARGE:
 
 cette fonction est prévue pour être utilisée pour l'écriture d'un nombre restreint d'éléments et sera appelée si le test porte sur une écriture de type "element".\
 sa signature est la suivante:
@@ -193,7 +193,7 @@ le paramètre "nombre_courbes" correspond au nombre de courbes qui seront concer
 avec ces quelques paramètres, la méthode va chercher à ajouter le nombre d'éléments renseigné à chaque courbe dans la limite du nombre de courbes renseigné. par exemple, avec un nombre d'éléments égal à 3 et un nombre de courbes égal à 8, la méthode va ajouter 3 nouveaux éléments à la fin des 8 premières courbes de charge (les courbes avec 0, 1, 2, 3, 4, 5, 6 et 7 comme "id_site").\
 si aucune date n'est utilisée c'est à cause de l'aléatoire mensionné dans la partie utilisateur de la documentation. en effet "ajout_element_en_fin_de_courbe_de_charge" va récupérer la date du dernier élément des courbes de charge concernées pour déterminer les dates auquelles les éléments doivent être ajoutés pour chaque courbe de charge. les éléments sont créés en faisant appel à la fonction "generation_pour_ajout_donnees" et insérés via la dernière méthode implémentée pour les interfaces "write".
 
-WRITE:
+## WRITE:
 
 cette méthode est utilisée pour toutes les opérations d'écriture. elle est appelée par la méthode décrite précédement si le test consiste en une opération d'écriture sur un ou plusieurs éléments/points. elle est aussi appelée directement lors des opérations de population des bases de données et d'écriture de courbes de charge.\
 sa signature est la suivante:
@@ -206,14 +206,14 @@ le paramètre "liste_a_ecrire" contient les éléments à écrire. le type n'est
 - pour mongodb ce paramètre contient une liste de dictionnaires (chacun d'entre eux représentant un point de courbe de charge)
 - pour influxdb et questdb ce sera une liste des pandas_dataframes (chaque pandas_dataframe correspond à une courbe de charge)
 
-COMMUNICATION AVEC LES DIFFÉRENTES BASES DE DONNÉES:
+## COMMUNICATION AVEC LES DIFFÉRENTES BASES DE DONNÉES:
 
-POSTGRES ET TIMESCALE:
+### POSTGRES ET TIMESCALE:
 
 toutes les bases de données ne sont pas accessibles via l'ORM de django, aussi certaines informations doivent être données si d'avanture vous souhaitez modifier les comportements des interfaces.\
 pour postgres et timescale, le programme passe par l'ORM django + une librairie qui s'appelle django-postgres-copy, qui permet d'insérer des courbes de charge bien plus vite qu'avec la fonction "bulk_create" de django en écrivant les courbes de cvharge dans des fichiers au format csv et en injectant ces fichiers dans les bases de données via la fonction "from_csv". ces fichiers temporaires sont effacés par la méthode write des bases de données concernées en faisant appel à la bibliothèque "os".
 
-MONGODB:
+### MONGODB:
 
 pour mogodb, j'utilise pymongo. il était possible de passer par l'ORM django en utilisant la bibliothèque djongo, mais cette dernière semble avoir été abandonnée et ne fonctionne plus (en plus de cela, il était impossible de faire de l'indexation avec djongo à moind de payer 15€ par mois pour avoir accès à djongoCS... alors qu'il est possible de faire de l'indexation avec pymongo gratuitement).\
 pour communiquer avec mogodb en utilisant pymongo il faut définir un client, la base, et la collection que l'on va utiliser comme ceci:
@@ -254,7 +254,7 @@ les champs précédés par un $ sont des fonctions de la base de données mongo.
 la traduction de cette ligne en sql donnerait cette requête:\
 ``UPDATE table_associée_au_model SET valeur=42 WHERE horodate >= date_debut AND horodate <= date_fin AND id_site IN liste;``
 
-QUESTDB:
+### QUESTDB:
 
 pour commmuniquer avec questdb, j'utilise deux techniques. une pour la création des tables et les requêtes et une autre pour l'insertion de données.
 
@@ -301,7 +301,7 @@ le partitioning par périodes de temps est le seul permis pour l'instant avec qu
 
 avec questdb, l'indexation n'est supportée que pour les données de type SYMBOL qui sont définis dans la documentation de quesdb comme étant des strings ayant un nombre fini de combinaisons possibles (des sortes de labels mais dans les faits il n'y a pas de vérification en dehors du fait que ce sont des strings et j'utilise la colonne id_site en tant que symbol pour m'en servir d'index).
 
-INFLUXDB:
+### INFLUXDB:
 
 pour communiquer avec influxdb j'utilise la bibliothèque "influxdb-client". il existait une autre solution nommée influxable mais cette dernière est incompatible avec la version de python que j'utilise car depuis quelques versions, les imports comportants des "-" sont interdits. or influxable en utilise plusieurs ce qui résulte en une erreur quand on essaye de l'importer.\
 avec cette bibliothèque il faut définir un client puis l'api que l'on souhaite utiliser selon que l'on souhaite faire une requête, insérer des éléments ou effacer des éléments.\
