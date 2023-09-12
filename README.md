@@ -1,5 +1,7 @@
 # databases-timeseries-analysis
 
+!attention! à l'heure actuelle influxdb consomme énormément de RAM. pour l'instant il est impossible de benchmark cette base avec des courbes de charge de plus de 6 mois.
+
 l'outil de test "automatique" de base de données du point de vue des timeseries !
 
 les bases de données disponibles sont:\
