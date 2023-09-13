@@ -417,7 +417,6 @@ class InterfaceQuestdb(InterfaceQueryDb):
         with pg.connect(conn_str) as connection:
 
             with connection.cursor() as cur:
-                print(f'max = {nombre_courbes}')
                 liste = '('
                 for i in range(nombre_courbes):
                     liste = liste + f"'{i}',"
@@ -428,7 +427,9 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
                 site = 0
                 for i in records:
-                    elements_a_inserer, _ = generation_pour_ajout_donnees(1, i[0] + dt.timedelta(minutes=5), i[0] + dt.timedelta(minutes=5 * nombre_elements), model, 0, False, 'questdb')
+                    elements_a_inserer, _ = generation_pour_ajout_donnees(1, i[0] + dt.timedelta(minutes=5),
+                                                                          i[0] + dt.timedelta(minutes=5 * nombre_elements),
+                                                                          model, 0, False, 'questdb')
                     liste_elements_a_inserer.extend(elements_a_inserer)
                     site += 1
 
@@ -492,7 +493,8 @@ class Interfaceinfluxdb(InterfaceQueryDb):
             token="token",
             org="holmium",
             username="test",
-            password="password"
+            password="password",
+            timeout=100_000
         )
 
         query_api = client.query_api()
@@ -501,8 +503,6 @@ class Interfaceinfluxdb(InterfaceQueryDb):
             query = f'from(bucket:"test") |> range(start: {localise_datetime(timestamp).isoformat()}, stop: {localise_datetime(timestamp + dt.timedelta(minutes=4)).isoformat()}) |> filter(fn: (r) => r.id_site =~ /[{identifiants_sites[0]} - {identifiants_sites[-1]}]$/)'
         else:
             query = f'from(bucket:"test") |> range(start: {localise_datetime(timestamp).isoformat()}, stop: {localise_datetime(timestamp + dt.timedelta(minutes=4)).isoformat()}) |> filter(fn: (r) => r.id_site == "{identifiants_sites[0]}")'
-
-        print(query)
 
         for i in range(10):
             result = query_api.query(org="holmium", query=query)
@@ -515,13 +515,15 @@ class Interfaceinfluxdb(InterfaceQueryDb):
         return fin - debut
 
     @classmethod
-    def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
+    def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [], *args,
+                           **kwargs):
         client = influxdb_client.InfluxDBClient(
             url="http://influxdb:8086",
             token="token",
             org="holmium",
             username="test",
-            password="password"
+            password="password",
+            timeout=100_000
         )
 
         query_api = client.query_api()
@@ -530,10 +532,7 @@ class Interfaceinfluxdb(InterfaceQueryDb):
             query = f'from(bucket:"test") |> range(start: {localise_datetime(date_debut).isoformat()}, stop: {localise_datetime(date_fin).isoformat()}) |> filter(fn: (r) => r.id_site =~ /[{identifiants_sites[0]} - {identifiants_sites[-1]}]$/)'
         else:
             query = f'from(bucket:"test") |> range(start: {localise_datetime(date_debut).isoformat()}, stop: {localise_datetime(date_fin).isoformat()}) |> filter(fn: (r) => r.id_site == "{identifiants_sites[0]}")'
-
-
-        print(query)
-        for i in range(10):
+        for i in range(3):
             result = query_api.query(org="holmium", query=query)
 
         debut = time.time()
@@ -545,13 +544,16 @@ class Interfaceinfluxdb(InterfaceQueryDb):
 
     @classmethod
     def update_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
-        elements, _ = generation_pour_ajout_donnees(len(identifiants_sites), timestamp, timestamp + dt.timedelta(minutes=4), model, 0, False, 'questdb')
+        elements, _ = generation_pour_ajout_donnees(len(identifiants_sites), timestamp,
+                                                    timestamp + dt.timedelta(minutes=4), model, 0, False, 'questdb')
         temps = self.write(model, elements)
         return temps
 
     @classmethod
-    def update_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
-        elements, _ = generation_pour_ajout_donnees(len(identifiants_sites), date_debut, date_fin, model, 0, False, 'questdb')
+    def update_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [], *args,
+                             **kwargs):
+        elements, _ = generation_pour_ajout_donnees(len(identifiants_sites), date_debut, date_fin, model, 0, False,
+                                                    'questdb')
         temps = self.write(model, elements)
         return temps
 
@@ -563,16 +565,21 @@ class Interfaceinfluxdb(InterfaceQueryDb):
             token="token",
             org="holmium",
             username="test",
-            password="password"
+            password="password",
+            timeout=100_000
         )
 
         query_api = client.query_api()
         liste_elements_a_inserer = []
         for i in range(nombre_courbes):
-            query = f'from(bucket:"test") |> range(start: {localise_datetime(dt.datetime(1980, 1, 1)).isoformat()}, stop: {localise_datetime(dt.datetime(2077, 1, 1)).isoformat()}) |> filter(fn: (r) => r.id_site == "{i}") |> last(column: "valeur")'
+            query = f'from(bucket:"test") |> range(start: {localise_datetime(dt.datetime(1980, 1, 1)).isoformat()}, ' \
+                    f'stop: {localise_datetime(dt.datetime(2077, 1, 1)).isoformat()}) |> filter(fn: (r) => r.id_site ' \
+                    f'== "{i}") |> last(column: "valeur")'
             result = query_api.query(org="holmium", query=query)
             derniere_date = dt.datetime.strptime(list(result[-1])[0]['horodate'][0:-6], '%Y-%m-%d %H:%M:%S')
-            element, _ = generation_pour_ajout_donnees(1, derniere_date + dt.timedelta(minutes=5), derniere_date + dt.timedelta(minutes=5 * nombre_elements), model, i, False, 'influxdb')
+            element, _ = generation_pour_ajout_donnees(1, derniere_date + dt.timedelta(minutes=5),
+                                                       derniere_date + dt.timedelta(minutes=5 * nombre_elements), model,
+                                                       i, False, 'influxdb')
             liste_elements_a_inserer.extend(element)
         client.__del__()
         temps = self.write(model, liste_elements_a_inserer, premiere_fois=False)
@@ -587,7 +594,8 @@ class Interfaceinfluxdb(InterfaceQueryDb):
             token="token",
             org="holmium",
             username="test",
-            password="password"
+            password="password",
+            timeout=100_000_000
         )
         write_api = client.write_api(write_options=SYNCHRONOUS)
         ultra_dataframe = liste_a_ecrire[0]
@@ -595,7 +603,9 @@ class Interfaceinfluxdb(InterfaceQueryDb):
             for i in liste_a_ecrire[1:]:
                 ultra_dataframe = pd.concat([ultra_dataframe, i], axis=0)
         debut = time.time()
-        write_api.write(bucket="test", org="holmium", record=ultra_dataframe, data_frame_measurement_name='test', data_frame_tag_columns=["id_site", "horodate", "identifiant_flux", "dernier_flux", "valeur"], data_frame_timestamp_column="horodate")  # , data_frame_measurement_name='test'    , data_frame_tag_columns=['id_site', 'dernier_flux', 'identifiant_flux', 'date_reception_flux', 'horodate', 'valeur']   , data_frame_measurement_name='test'
+        write_api.write(bucket="test", org="holmium", record=ultra_dataframe, data_frame_measurement_name='test',
+                        data_frame_tag_columns=["id_site", "horodate", "identifiant_flux", "dernier_flux", "valeur"],
+                        data_frame_timestamp_column="horodate")
         fin = time.time()
         client.__del__()
         return fin - debut

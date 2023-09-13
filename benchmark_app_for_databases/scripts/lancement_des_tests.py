@@ -11,11 +11,11 @@ from benchmark_app_for_databases.models import TimeSerieElementMongo, TimeSerieE
     TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSitePartition, \
     TimeSerieElementQuestdbIndexSite, TimeserieElementInflux
 from postgres_benchmark.models import *
-from utils.profile import ProfilerHandler
+# from utils.profile import ProfilerHandler
 
-profiler = ProfilerHandler(print_our_code_only=True, sortby='cumtime', print_callers=True, print_callees=True,
-                               output_file=f'./tmp/perf_report_{dt.datetime.now()}.txt',
-                               output_table=f'./tmp/perf_table_{dt.datetime.now()}.csv')
+# profiler = ProfilerHandler(print_our_code_only=True, sortby='cumtime', print_callers=True, print_callees=True,
+#                                output_file=f'./tmp/perf_report_{dt.datetime.now()}.txt',
+#                                output_table=f'./tmp/perf_table_{dt.datetime.now()}.csv')
 
 
 def run():
@@ -25,9 +25,11 @@ def run():
                      TimeSerieElementDoubleIndexationSiteNonPartitionne, TimeSerieElementTripleIndexationNonPartitionne,
                      TimeSerieElement, TimeSerieElementIndexationHorodate, TimeSerieElementDoubleIndexationSite,
                      TimeSerieElementTripleIndexation],
-        "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite, TimeSerieElementMongoIndexHorodateSite],
+        "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite,
+                  TimeSerieElementMongoIndexHorodateSite],
         "timescale": [TimeSerieElementTimescale],
-        'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite, TimeSerieElementQuestdbIndexSitePartition],
+        'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite,
+                    TimeSerieElementQuestdbIndexSitePartition],
         # 'influxdb': [TimeserieElementInflux]
 
     }
@@ -37,11 +39,12 @@ def run():
     date_depart_population = dt.datetime(2021, 1, 1)
     date_fin_population = dt.datetime(2023, 7, 31)
     population_base = 10
-    ecart_aleatoire = 10
+    ecart_aleatoire = 0
 
     try:
         for database, models in _dict.items():
-            insertion_sans_saturer_la_ram(database, population_base, models, date_depart_population, date_fin_population, 0, True, ecart_aleatoire)
+            insertion_sans_saturer_la_ram(database, population_base, models, date_depart_population,
+                                          date_fin_population, 0, True, ecart_aleatoire)
 
             # kwargs = {
             #     'base': database,
@@ -56,44 +59,9 @@ def run():
             # perfs = profiler.profile_func(partial(benchmark, **kwargs))
             #
             # liste_performances.extend(perfs)
-            print('ecriture un element')
-            liste_performances.extend(
-                benchmark(database, models, 1, 'element', 'ecriture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1), population_base, 5))
 
-            print('update un element')
-            liste_performances.extend(
-                benchmark(database, models, 1, 'element', 'update', dt.datetime(2022, 2, 1, 0, 0),
-                          dt.datetime(2022, 2, 1, 0, 4),
-                          population_base))
 
-            print('ecriture une courbe')
 
-            liste_performances.extend(
-                benchmark(database, models, 1, 'courbe', 'ecriture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1),
-                          population_base))
-
-            print('insertion avec update une courbe')
-
-            liste_performances.extend(
-                benchmark(database, models, 1, 'courbe', 'ecriture', dt.datetime(2023, 7, 1),
-                          dt.datetime(2023, 8, 1),
-                          population_base))
-
-            # print('ecriture 100 courbes')
-            #
-            # liste_performances.extend(
-            #     benchmark(database, models, 100, 'courbe', 'ecriture', dt.datetime(2021, 1, 1, 0, 0),
-            #               dt.datetime(2022, 1, 1, 0, 4),
-            #               population_base))
-
-            # print('ecriture 1000 courbes')
-
-            # liste_performances.extend(
-            #     benchmark(database, models, 1000, 'courbe', 'ecriture', dt.datetime(2021, 1, 1, 0, 0),
-            #               dt.datetime(2022, 1, 1, 0, 4),
-            #               population_base))
-
-            # tests en lecture
 
             print('lecture un element')
 
@@ -122,6 +90,47 @@ def run():
             #     benchmark(database, models, 1000, 'courbe', 'lecture', dt.datetime(2022, 2, 1),
             #               dt.datetime(2023, 2, 1),
             #               population_base))
+
+            print('ecriture un element')
+            liste_performances.extend(
+                benchmark(database, models, 1, 'element', 'ecriture', dt.datetime(2021, 1, 1), dt.datetime(2023, 1, 1),
+                          population_base, 5))
+
+            print('update un element')
+            liste_performances.extend(
+                benchmark(database, models, 1, 'element', 'update', dt.datetime(2022, 2, 1, 0, 0),
+                          dt.datetime(2022, 2, 1, 0, 4),
+                          population_base))
+
+            print('ecriture une courbe')
+
+            liste_performances.extend(
+                benchmark(database, models, 1, 'courbe', 'ecriture', dt.datetime(2022, 1, 1), dt.datetime(2023, 1, 1),
+                          population_base))
+
+            print('insertion avec update une courbe')
+
+            liste_performances.extend(
+                benchmark(database, models, 1, 'courbe', 'ecriture', dt.datetime(2023, 7, 1),
+                          dt.datetime(2023, 8, 1),
+                          population_base))
+
+            # print('ecriture 100 courbes')
+            #
+            # liste_performances.extend(
+            #     benchmark(database, models, 100, 'courbe', 'ecriture', dt.datetime(2021, 1, 1, 0, 0),
+            #               dt.datetime(2022, 1, 1, 0, 4),
+            #               population_base))
+
+            # print('ecriture 1000 courbes')
+
+            # liste_performances.extend(
+            #     benchmark(database, models, 1000, 'courbe', 'ecriture', dt.datetime(2021, 1, 1, 0, 0),
+            #               dt.datetime(2022, 1, 1, 0, 4),
+            #               population_base))
+
+            # tests en lecture
+
         print(f'liste_performances={liste_performances}')
         # profiler.gen_report()
 
@@ -162,12 +171,14 @@ def run():
                         token="token",
                         org="holmium",
                         username="test",
-                        password="password"
+                        password="password",
+                        timeout=10_000_000
                     )
 
                     delete_api = client.delete_api()
 
-                    delete_api.delete(dt.datetime(1980, 1, 1), dt.datetime(2077, 1, 1), '_measurement="test"', bucket="test")
+                    delete_api.delete(dt.datetime(1980, 1, 1), dt.datetime(2077, 1, 1), '_measurement="test"',
+                                      bucket="test")
 
                     client.__del__()
                 else:
