@@ -17,7 +17,8 @@ les bases de données disponibles sont:\
 -questdb
 
 pour utiliser l'outil il faut écrire le scénario de tests que vous voulez faire subir aux bases de données dans le 
-script "lancement_des_tests.py" qui se trouve dans le dossier benchmark_app_for_databases/scripts.
+script "lancement_des_tests.py" qui se trouve dans le dossier benchmark_app_for_databases/scripts puis exécuter ce 
+script avec "manage.py".
 
 ## LE FICHIER DE LANCEMENT DES TESTS:
 
