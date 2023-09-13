@@ -140,30 +140,26 @@ def run():
     finally:
         for k, i in _dict.items():
             for j in i:
+                print(f'grand nettoyage lancé pour {j.__name__}')
                 if k == 'mongo':
                     client = MongoClient("mongo", 27017)
                     db = client.mongo
-                    if isinstance(j(), TimeSerieElementMongo):
+                    if isinstance(j, TimeSerieElementMongo):
                         collection = db.TimeSerieElementMongo
-                    elif isinstance(j(), TimeSerieElementMongoIndexHorodate):
+                    elif isinstance(j, TimeSerieElementMongoIndexHorodate):
                         collection = db.TimeSerieElementMongoIndexHorodate
-                    elif isinstance(j(), TimeSerieElementMongoIndexSite):
+                    elif isinstance(j, TimeSerieElementMongoIndexSite):
                         collection = db.TimeSerieElementMongoIndexSite
                     else:
                         collection = db.TimeSerieElementMongoIndexHorodateSite
-                    print(f'grand nettoyage lancé pour {j.__name__}')
                     collection.remove({})
-                    print(f'grand nettoyage terminé pour {j.__name__}')
                 elif k == 'questdb':
-                    print(f'grand nettoyage lancé pour {j.__name__}')
                     conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
                     with pg.connect(conn_str) as connection:
 
                         with connection.cursor() as cur:
-                            cur.execute(f'DROP TABLE {j().name};')
+                            cur.execute(f'DROP TABLE {j.name};')
 
-
-                    print(f'grand nettoyage terminé pour {j.__name__}')
                 elif k == 'influxdb':
 
                     client = influxdb_client.InfluxDBClient(
@@ -182,8 +178,7 @@ def run():
 
                     client.__del__()
                 else:
-                    print(f'grand nettoyage lancé pour {j.__name__}')
                     j.objects.using(k).all().delete()
-                    print(f'grand nettoyage terminé pour {j.__name__}')
+                print(f'grand nettoyage terminé pour {j.__name__}')
 
 
