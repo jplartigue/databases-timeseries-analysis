@@ -21,15 +21,15 @@ from postgres_benchmark.models import *
 def run():
 
     _dict = {
-        "postgres": [TimeSerieElementNonPartitionne, TimeSerieElementDoubleIndexationHorodateNonPartitionne,
-                     TimeSerieElementDoubleIndexationSiteNonPartitionne, TimeSerieElementTripleIndexationNonPartitionne,
-                     TimeSerieElement, TimeSerieElementIndexationHorodate, TimeSerieElementDoubleIndexationSite,
-                     TimeSerieElementTripleIndexation],
+        # "postgres": [TimeSerieElementNonPartitionne, TimeSerieElementDoubleIndexationHorodateNonPartitionne,
+        #              TimeSerieElementDoubleIndexationSiteNonPartitionne, TimeSerieElementTripleIndexationNonPartitionne,
+        #              TimeSerieElement, TimeSerieElementIndexationHorodate, TimeSerieElementDoubleIndexationSite,
+        #              TimeSerieElementTripleIndexation],
         "mongo": [TimeSerieElementMongo, TimeSerieElementMongoIndexHorodate, TimeSerieElementMongoIndexSite,
                   TimeSerieElementMongoIndexHorodateSite],
-        "timescale": [TimeSerieElementTimescale],
-        'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite,
-                    TimeSerieElementQuestdbIndexSitePartition],
+        # "timescale": [TimeSerieElementTimescale],
+        # 'questdb': [TimeSerieElementQuestdb, TimeserieElementQuestdbPartition, TimeSerieElementQuestdbIndexSite,
+        #             TimeSerieElementQuestdbIndexSitePartition],
         # 'influxdb': [TimeserieElementInflux]
 
     }

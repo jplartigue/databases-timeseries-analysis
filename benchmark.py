@@ -6,6 +6,20 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
                                   date_debut: dt.datetime,
                                   date_fin: dt.datetime,
                                   identifiant_max: int, population: bool, rand_days: int):
+    """
+    cette fonction est pensée pour permettre de créer et insérer lescourbes de charge dans les bases de données tout en
+    évitant de saturer la mémoire vive. pour modifier le nombre de courbes de charge à manipuler à chaque fois il faut
+    modifier la valeur affectée à la variable limite_courbes_en_ram à la main.
+    :param base: le nom de la base concernée
+    :param nombre_sites: le nombre de courbes à créer en tout
+    :param models: les models à utiliser
+    :param date_debut: la date du premier élément de chaque courbe de charge
+    :param date_fin: la date du dernier élément de chaque courbe de charge
+    :param identifiant_max: l'identifiant de site maximum qui se trouve en base
+    :param population: un booléen pour spécifier si la création se déroule dans le cadre de la phase de remplissag de la base de données ou dans le cadre d'un test
+    :param rand_days: le nombre de jours d'écart tolérés avec les dates de départ et de fin des courbes de charge
+    :return: la liste des temps totaux pris par les insertions dans l'ordre des models et l'identifiant maximum en base
+    """
     limite_courbes_en_ram = 10
     temps = 0.0
     les_temps = []
@@ -26,7 +40,7 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
             if population:
                 liste_elements, identifiant_max = generation_donnees(min(limite_courbes_en_ram, nombre_sites - current),
                                                                      date_debut, date_fin, current_model,
-                                                                     identifiant_max, export, base, rand_days)
+                                                                     export, base, rand_days)
             else:
                 liste_elements, identifiant_max = generation_pour_ajout_donnees(min(limite_courbes_en_ram,
                                                                                     nombre_sites - current),
@@ -42,6 +56,16 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
 
 def fonction_lecture(date_depart_operation: dt.datetime, date_fin_operation: dt.datetime, type_element: str,
                      models: list, taille_ram: int, nombre_elements: int):
+    """
+    cette fonction est prévue pour lire les données des bases de données sans saturer la mémoire vive
+    :param date_depart_operation: la date du plus ancient point qui sera requêté
+    :param date_fin_operation: la date du point le plus récent qui sera requêté
+    :param type_element: le type d'élément demandé (element pour demander des points et courbe pour demander des courbes)
+    :param models: les models à utiliser
+    :param taille_ram: le nombre de courbes qui peuvent tenir en mémoire vive (penser à prévoir quand-même une marge de 1 Go minimum)
+    :param nombre_elements: le nombre de points ou de courbes de charge à requêter
+    :return:
+    """
     if type_element == "element":
         taille_ram = taille_ram * 2522880
     liste_des_temps_et_models = [[], []]
@@ -70,6 +94,19 @@ def benchmark(base: str, models: list, nombre_elements: int,
               date_fin_operation: dt.datetime,
               remplissage_prealable: int,
               nombre_courbes: int = 1):
+    """
+    c'est la fonction qui va appeler les fonctions adaptées au test demandé par l'utilisateur.
+    :param base: la base à tester
+    :param models: les models ratachés à la base
+    :param nombre_elements: le nombre de points ou de courbe de charge concernés par le test
+    :param type_element: le type d'élément concerné par le test ("element" pour demander un point de courbe de charge ou "courbe" pour des courbes de charge)
+    :param operation: le type de test/opération à effectuer ("ecriture", "lecture", "update" ou "insertion avec update")
+    :param date_depart_operation: la date de départ de l'opération
+    :param date_fin_operation: la date de fin de l'opération
+    :param remplissage_prealable: int pour indiquer combien de courbes se trouvent déjà en base
+    :param nombre_courbes: paramètre qui ne sert que dans le cas d'un test d'écriture de points et sert à donner le nombre de courbe concernées par le test
+    :return: une liste dont chaque élément représente le rapport portant sur un test
+    """
     resultat_test = []
     taille_ram = 10
     identifiant_max = remplissage_prealable

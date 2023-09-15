@@ -18,6 +18,17 @@ from utils.localtime import localise_datetime
 class InterfacePostgres(InterfaceQueryDb):
     @classmethod
     def read_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [str], *args, **kwargs):
+        """
+        cette fonction sert à tester la performance des requêtes concernant un ou un petit nombre de points éparses.
+        :param timestamp: un datetime qui renseigne la date du ou des points visés
+        :param model: doit renseigner le model concerné (ceci affin de déterminer quelle configuration est visée)
+        :param identifiants_sites: la liste des identifiants de site à requêter au format str
+        :param args: inutilisés
+        :param kwargs: inutilisés
+        :return: le temps pris pour exécuter la requête
+        cette fonction va exécuter la requête 10 fois et regarder le temps d'exécution à la 11ème tentative pour
+        profiter du cache
+        """
 
         for i in range(10):
             _ = list(model.objects.filter(id_site__in=identifiants_sites, horodate=timestamp))
@@ -28,6 +39,17 @@ class InterfacePostgres(InterfaceQueryDb):
 
     @classmethod
     def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [str], *args, **kwargs):
+        """
+        cette fonction est prévue pour tester les requêtes portant sur des parties de courbes de charge ou des courbes de charges entières
+        :param date_debut: la date de départ de l'intervalle de temps sur lequel porte la requête
+        :param date_fin: la date de fin de l'intervalle de temps sur lequel porte la requête
+        :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+        :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+        :param args: non utilisé
+        :param kwargs: non utilisé
+        :return: le temps pris pour exécuter la requête
+        cette fonction va exécuter 10 fois la requête et renvoyer le temps pris par la 11 ème tentative pour profiter de l'effet du cache
+        """
 
         for i in range(10):
             _ = list(model.objects.filter(id_site__in=identifiants_sites, horodate__gte=date_debut, horodate__lte=date_fin))
@@ -38,6 +60,15 @@ class InterfacePostgres(InterfaceQueryDb):
 
     @classmethod
     def update_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [str], *args, **kwargs):
+        """
+        cette fonction est prévue pour tester la rapidité d'une requête de mise à jour portant sur un ou un petit nombre de points de courbe de charge
+        :param timestamp: la date du ou des éléments concernés
+        :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+        :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+        :param args: non utilisé
+        :param kwargs: non utilisé
+        :return: le temps pris pour exécuter la requête
+        """
         debut = time.time()
         model.objects.filter(id_site__in=identifiants_sites, horodate=timestamp).update(valeur=42)
         fin = time.time()
@@ -46,6 +77,16 @@ class InterfacePostgres(InterfaceQueryDb):
     @classmethod
     def update_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [str],
                              *args, **kwargs):
+        """
+        cette fonction est prévue pour tester les requêtes de mise à jour portant sur des portions complètes de courbes de charges ou sur des courbes de charge toute entières
+        :param date_debut: la date de départ de l'intervalle de temps sur lequel porte la requête
+        :param date_fin: la date de fin de l'intervalle de temps sur lequel porte la requête
+        :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+        :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+        :param args: non utilisé
+        :param kwargs: non utilisé
+        :return: le temps pris pour exécuter la requête
+        """
         debut = time.time()
         model.objects.filter(id_site__in=identifiants_sites, horodate__gte=date_debut, horodate__lte=date_fin).update(
             valeur=42)
@@ -54,6 +95,16 @@ class InterfacePostgres(InterfaceQueryDb):
 
     @classmethod
     def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args, **kwargs):
+        """
+        cette fonction est prévue pour tester le's requêtes en écriture portant sur un seul ou un petit nombre de points
+        elle va tenter d'ajouter ces points sur une ou plusieurs courbes
+        :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+        :param nombre_elements: le nombre de points à créer
+        :param nombre_courbes: le nombre de courbes concernées par le test
+        :param args: non utilisé
+        :param kwargs: non utilisé
+        :return: le temps d'exécution de la requête
+        """
         liste = []
         for i in range(nombre_courbes):
             derniere_entree = model.objects.filter(id_site=i).latest("horodate").horodate
@@ -72,6 +123,14 @@ class InterfacePostgres(InterfaceQueryDb):
 
     @classmethod
     def write(self, model, liste_a_ecrire: [], *args, **kwargs):
+        """
+        cette fonction est prévue pour toutes les opérations d'écriture concernant des courbes de charge entières
+        :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+        :param liste_a_ecrire: la liste d'éléments à écrire (ici les noms des fichiers contenant les courbes de charge)
+        :param args: non utilisé
+        :param kwargs: non utilisé
+        :return: le temps d'exécution de la requête
+        """
         if len(liste_a_ecrire) == 0:
             raise ValueError('vous avez oublié de spécifier les fichiers contenant les informations à mettre en base')
         temps = 0.0
@@ -88,6 +147,15 @@ class InterfaceTimescale(InterfaceQueryDb):
 
     @classmethod
     def read_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [str], *args, **kwargs):
+        """
+                cette fonction sert à tester la performance des requêtes concernant un ou un petit nombre de points éparses.
+                :param timestamp: un datetime qui renseigne la date du ou des points visés
+                :param model: doit renseigner le model concerné (ceci affin de déterminer quelle configuration est visée)
+                :param identifiants_sites: la liste des identifiants de site à requêter au format str
+                :param args: inutilisés
+                :param kwargs: inutilisés
+                :return: le temps pris pour exécuter la requête
+                """
 
         for i in range(10):
             _ = list(model.objects.filter(id_site__in=identifiants_sites, horodate=timestamp))
@@ -99,6 +167,17 @@ class InterfaceTimescale(InterfaceQueryDb):
 
     @classmethod
     def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [str], *args, **kwargs):
+        """
+                cette fonction est prévue pour tester les requêtes portant sur des parties de courbes de charge ou des courbes de charges entières
+                :param date_debut: la date de départ de l'intervalle de temps sur lequel porte la requête
+                :param date_fin: la date de fin de l'intervalle de temps sur lequel porte la requête
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                cette fonction va exécuter 10 fois la requête et renvoyer le temps pris par la 11 ème tentative pour profiter de l'effet du cache
+                """
 
         for i in range(10):
             _ = list(model.objects.filter(id_site__in=identifiants_sites, horodate__gte=date_debut, horodate__lte=date_fin))
@@ -109,6 +188,15 @@ class InterfaceTimescale(InterfaceQueryDb):
 
     @classmethod
     def update_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [str], *args, **kwargs):
+        """
+                cette fonction est prévue pour tester la rapidité d'une requête de mise à jour portant sur un ou un petit nombre de points de courbe de charge
+                :param timestamp: la date du ou des éléments concernés
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                """
         debut = time.time()
         model.objects.filter(id_site__in=identifiants_sites, horodate=timestamp).update(valeur=42)
         fin = time.time()
@@ -117,6 +205,16 @@ class InterfaceTimescale(InterfaceQueryDb):
     @classmethod
     def update_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [str],
                              *args, **kwargs):
+        """
+                cette fonction est prévue pour tester les requêtes de mise à jour portant sur des portions complètes de courbes de charges ou sur des courbes de charge toute entières
+                :param date_debut: la date de départ de l'intervalle de temps sur lequel porte la requête
+                :param date_fin: la date de fin de l'intervalle de temps sur lequel porte la requête
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                """
         debut = time.time()
         model.objects.filter(id_site__in=identifiants_sites, horodate__gte=date_debut, horodate__lte=date_fin).update(
             valeur=42)
@@ -126,6 +224,16 @@ class InterfaceTimescale(InterfaceQueryDb):
     @classmethod
     def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args,
                                                  **kwargs):
+        """
+                cette fonction est prévue pour tester le's requêtes en écriture portant sur un seul ou un petit nombre de points
+                elle va tenter d'ajouter ces points sur une ou plusieurs courbes
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param nombre_elements: le nombre de points à créer
+                :param nombre_courbes: le nombre de courbes concernées par le test
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps d'exécution de la requête
+                """
         liste = []
         for i in range(nombre_courbes):
             derniere_entree = model.objects.filter(id_site=i).latest("horodate").horodate
@@ -140,6 +248,14 @@ class InterfaceTimescale(InterfaceQueryDb):
 
     @classmethod
     def write(self, model, liste_a_ecrire: [], *args, **kwargs):
+        """
+                cette fonction est prévue pour toutes les opérations d'écriture concernant des courbes de charge entières
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param liste_a_ecrire: la liste d'éléments à écrire (ici les noms des fichiers contenant les courbes de charge)
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps d'exécution de la requête
+                """
 
         if len(liste_a_ecrire) == 0:
             raise ValueError('vous avez oublié de spécifier les fichiers contenant les informations à mettre en base')
@@ -157,6 +273,15 @@ class InterfaceMongo(InterfaceQueryDb):
 
     @classmethod
     def read_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [int], *args, **kwargs):
+        """
+                cette fonction sert à tester la performance des requêtes concernant un ou un petit nombre de points éparses.
+                :param timestamp: un datetime qui renseigne la date du ou des points visés
+                :param model: doit renseigner le model concerné (ceci affin de déterminer quelle configuration est visée)
+                :param identifiants_sites: la liste des identifiants de site à requêter au format str
+                :param args: inutilisés
+                :param kwargs: inutilisés
+                :return: le temps pris pour exécuter la requête
+                """
         client = MongoClient("mongo", 27017)
         db = client.mongo
         match model.__name__:
@@ -182,6 +307,17 @@ class InterfaceMongo(InterfaceQueryDb):
     @classmethod
     def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [int],
                            *args, **kwargs):
+        """
+                cette fonction est prévue pour tester les requêtes portant sur des parties de courbes de charge ou des courbes de charges entières
+                :param date_debut: la date de départ de l'intervalle de temps sur lequel porte la requête
+                :param date_fin: la date de fin de l'intervalle de temps sur lequel porte la requête
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                cette fonction va exécuter 10 fois la requête et renvoyer le temps pris par la 11 ème tentative pour profiter de l'effet du cache
+                """
         client = MongoClient("mongo", 27017)
         db = client.mongo
         match model.__name__:
@@ -207,6 +343,15 @@ class InterfaceMongo(InterfaceQueryDb):
 
     @classmethod
     def update_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [int], *args, **kwargs):
+        """
+                cette fonction est prévue pour tester la rapidité d'une requête de mise à jour portant sur un ou un petit nombre de points de courbe de charge
+                :param timestamp: la date du ou des éléments concernés
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                """
         client = MongoClient("mongo", 27017)
         db = client.mongo
         match model.__name__:
@@ -228,6 +373,16 @@ class InterfaceMongo(InterfaceQueryDb):
     @classmethod
     def update_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [int],
                              *args, **kwargs):
+        """
+                cette fonction est prévue pour tester les requêtes de mise à jour portant sur des portions complètes de courbes de charges ou sur des courbes de charge toute entières
+                :param date_debut: la date de départ de l'intervalle de temps sur lequel porte la requête
+                :param date_fin: la date de fin de l'intervalle de temps sur lequel porte la requête
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                """
         client = MongoClient("mongo", 27017)
         db = client.mongo
         match model.__name__:
@@ -249,6 +404,16 @@ class InterfaceMongo(InterfaceQueryDb):
     @classmethod
     def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args,
                                                  **kwargs):
+        """
+                cette fonction est prévue pour tester le's requêtes en écriture portant sur un seul ou un petit nombre de points
+                elle va tenter d'ajouter ces points sur une ou plusieurs courbes
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param nombre_elements: le nombre de points à créer
+                :param nombre_courbes: le nombre de courbes concernées par le test
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps d'exécution de la requête
+                """
         client = MongoClient("mongo", 27017)
         db = client.mongo
         match model.__name__:
@@ -282,6 +447,14 @@ class InterfaceMongo(InterfaceQueryDb):
 
     @classmethod
     def write(self, model, liste_a_ecrire: [], *args, **kwargs):
+        """
+                cette fonction est prévue pour toutes les opérations d'écriture concernant des courbes de charge entières
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param liste_a_ecrire: la liste d'éléments à écrire (ici des dictionnaires chacun représentant un point d'une courbe de charge)
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps d'exécution de la requête
+                """
         client = MongoClient("mongo", 27017)
         db = client.mongo
         match model.__name__:
@@ -317,6 +490,15 @@ class InterfaceMongo(InterfaceQueryDb):
 class InterfaceQuestdb(InterfaceQueryDb):
     @classmethod
     def read_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [str], *args, **kwargs):
+        """
+                cette fonction sert à tester la performance des requêtes concernant un ou un petit nombre de points éparses.
+                :param timestamp: un datetime qui renseigne la date du ou des points visés
+                :param model: doit renseigner le model concerné (ceci affin de déterminer quelle configuration est visée)
+                :param identifiants_sites: la liste des identifiants de site à requêter au format str
+                :param args: inutilisés
+                :param kwargs: inutilisés
+                :return: le temps pris pour exécuter la requête
+                """
 
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
         with pg.connect(conn_str) as connection:
@@ -343,6 +525,17 @@ class InterfaceQuestdb(InterfaceQueryDb):
     @classmethod
     def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [str],
                            *args, **kwargs):
+        """
+                cette fonction est prévue pour tester les requêtes portant sur des parties de courbes de charge ou des courbes de charges entières
+                :param date_debut: la date de départ de l'intervalle de temps sur lequel porte la requête
+                :param date_fin: la date de fin de l'intervalle de temps sur lequel porte la requête
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                cette fonction va exécuter 10 fois la requête et renvoyer le temps pris par la 11 ème tentative pour profiter de l'effet du cache
+                """
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
         with pg.connect(conn_str) as connection:
 
@@ -368,6 +561,15 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
     @classmethod
     def update_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [str], *args, **kwargs):
+        """
+                cette fonction est prévue pour tester la rapidité d'une requête de mise à jour portant sur un ou un petit nombre de points de courbe de charge
+                :param timestamp: la date du ou des éléments concernés
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                """
 
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
         with pg.connect(conn_str) as connection:
@@ -388,6 +590,16 @@ class InterfaceQuestdb(InterfaceQueryDb):
     @classmethod
     def update_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [str],
                              *args, **kwargs):
+        """
+                cette fonction est prévue pour tester les requêtes de mise à jour portant sur des portions complètes de courbes de charges ou sur des courbes de charge toute entières
+                :param date_debut: la date de départ de l'intervalle de temps sur lequel porte la requête
+                :param date_fin: la date de fin de l'intervalle de temps sur lequel porte la requête
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                """
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
         with pg.connect(conn_str) as connection:
 
@@ -411,6 +623,16 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
     @classmethod
     def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args, **kwargs):
+        """
+                cette fonction est prévue pour tester le's requêtes en écriture portant sur un seul ou un petit nombre de points
+                elle va tenter d'ajouter ces points sur une ou plusieurs courbes
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param nombre_elements: le nombre de points à créer
+                :param nombre_courbes: le nombre de courbes concernées par le test
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps d'exécution de la requête
+                """
 
         liste_elements_a_inserer = []
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
@@ -442,6 +664,14 @@ class InterfaceQuestdb(InterfaceQueryDb):
 
     @classmethod
     def write(self, model, liste_a_ecrire: [], *args, **kwargs):
+        """
+                cette fonction est prévue pour toutes les opérations d'écriture concernant des courbes de charge entières
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param liste_a_ecrire: la liste d'éléments à écrire (ici les courbes de charges au format pandas)
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps d'exécution de la requête
+                """
 
         conn_str = 'user=admin password=quest host=questdb port=8812 dbname=qdb'
         with pg.connect(conn_str) as connection:
@@ -488,6 +718,15 @@ class Interfaceinfluxdb(InterfaceQueryDb):
 
     @classmethod
     def read_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
+        """
+                cette fonction sert à tester la performance des requêtes concernant un ou un petit nombre de points éparses.
+                :param timestamp: un datetime qui renseigne la date du ou des points visés
+                :param model: doit renseigner le model concerné (ceci affin de déterminer quelle configuration est visée)
+                :param identifiants_sites: la liste des identifiants de site à requêter au format str
+                :param args: inutilisés
+                :param kwargs: inutilisés
+                :return: le temps pris pour exécuter la requête
+                """
         client = influxdb_client.InfluxDBClient(
             url="http://influxdb:8086",
             token="token",
@@ -517,6 +756,17 @@ class Interfaceinfluxdb(InterfaceQueryDb):
     @classmethod
     def read_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [], *args,
                            **kwargs):
+        """
+                cette fonction est prévue pour tester les requêtes portant sur des parties de courbes de charge ou des courbes de charges entières
+                :param date_debut: la date de départ de l'intervalle de temps sur lequel porte la requête
+                :param date_fin: la date de fin de l'intervalle de temps sur lequel porte la requête
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                cette fonction va exécuter 10 fois la requête et renvoyer le temps pris par la 11 ème tentative pour profiter de l'effet du cache
+                """
         client = influxdb_client.InfluxDBClient(
             url="http://influxdb:8086",
             token="token",
@@ -544,6 +794,15 @@ class Interfaceinfluxdb(InterfaceQueryDb):
 
     @classmethod
     def update_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
+        """
+                cette fonction est prévue pour tester la rapidité d'une requête de mise à jour portant sur un ou un petit nombre de points de courbe de charge
+                :param timestamp: la date du ou des éléments concernés
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                """
         elements, _ = generation_pour_ajout_donnees(len(identifiants_sites), timestamp,
                                                     timestamp + dt.timedelta(minutes=4), model, 0, False, 'questdb')
         temps = self.write(model, elements)
@@ -552,6 +811,16 @@ class Interfaceinfluxdb(InterfaceQueryDb):
     @classmethod
     def update_between_dates(self, date_debut: dt.datetime, date_fin: dt.datetime, model, identifiants_sites: [], *args,
                              **kwargs):
+        """
+                cette fonction est prévue pour tester les requêtes de mise à jour portant sur des portions complètes de courbes de charges ou sur des courbes de charge toute entières
+                :param date_debut: la date de départ de l'intervalle de temps sur lequel porte la requête
+                :param date_fin: la date de fin de l'intervalle de temps sur lequel porte la requête
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param identifiants_sites: la liste des indentifiants des courbes de charge à requêter
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps pris pour exécuter la requête
+                """
         elements, _ = generation_pour_ajout_donnees(len(identifiants_sites), date_debut, date_fin, model, 0, False,
                                                     'questdb')
         temps = self.write(model, elements)
@@ -559,6 +828,16 @@ class Interfaceinfluxdb(InterfaceQueryDb):
 
     @classmethod
     def ajout_element_en_fin_de_courbe_de_charge(self, model, nombre_elements: int, nombre_courbes: int, *args, **kwargs):
+        """
+                cette fonction est prévue pour tester le's requêtes en écriture portant sur un seul ou un petit nombre de points
+                elle va tenter d'ajouter ces points sur une ou plusieurs courbes
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param nombre_elements: le nombre de points à créer
+                :param nombre_courbes: le nombre de courbes concernées par le test
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps d'exécution de la requête
+                """
 
         client = influxdb_client.InfluxDBClient(
             url="http://influxdb:8086",
@@ -588,6 +867,14 @@ class Interfaceinfluxdb(InterfaceQueryDb):
 
     @classmethod
     def write(self, model, liste_a_ecrire: [], *args, **kwargs):
+        """
+                cette fonction est prévue pour toutes les opérations d'écriture concernant des courbes de charge entières
+                :param model: le model à utiliser (utilisé pour savoir quelle configuration est testée)
+                :param liste_a_ecrire: la liste d'éléments à écrire (ici les courbes de charge au format pandas dataframe)
+                :param args: non utilisé
+                :param kwargs: non utilisé
+                :return: le temps d'exécution de la requête
+                """
 
         client = influxdb_client.InfluxDBClient(
             url="http://influxdb:8086",

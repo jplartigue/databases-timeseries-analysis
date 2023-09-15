@@ -7,6 +7,10 @@ from utils.singleton import SingletonMeta
 
 
 class SingletonData(metaclass=SingletonMeta):
+    """
+    le signleton qui crée un index lorsequ'il est appelé pour la première fois et renvoie la partie demandée pour
+    accélérer la création de pandas dataframes
+    """
     def __init__(self, min_start_date: dt.date = None, max_end_date: dt.date = None):
         self.sd = localise_date(min_start_date)
         self.ed = localise_date(max_end_date)
@@ -20,12 +24,21 @@ class SingletonData(metaclass=SingletonMeta):
 
 
 def generation_donnees(nombre_sites: int, date_debut: dt.datetime, date_fin: dt.datetime, model,
-                       identifiant_max, export: bool, base, rand_days: int):
+                       export: bool, base, rand_days: int):
+    """
+    une fonction créée pour générer les données de remplissage
+    :param nombre_sites: le nombre de courbes de charge à créer
+    :param date_debut: la date du premier point des courbes de charge
+    :param date_fin: la date du dernier point des courbes de charge
+    :param model: le model à utiliser (utilisé en cas de sérialisation en objet)
+    :param export: un booléen pour spécifier si les courbes de charges doivent être enregistrées dans des fichiers CSV
+    :param base: le nom de la base de données (sert à savoir quel traitement appliquer aux données créées)
+    :param rand_days: l'écart toléré entre les dates de début et de fin pour ajouter de l'aléatoire
+    :return: les données dans le format attendu par la méthode associée à la base de données
+    """
     liste_elements = []
-    site = identifiant_max
+    site = 0
     for i in range(nombre_sites):
-
-        identifiant_max += 1
 
         courbe_du_site = SingletonData(date_debut.date(), date_fin.date()).get_init_df(rand_days=rand_days)
 
@@ -54,11 +67,24 @@ def generation_donnees(nombre_sites: int, date_debut: dt.datetime, date_fin: dt.
 
 
         site += 1
-    return liste_elements, identifiant_max
+    return liste_elements, site
 
 
 def generation_pour_ajout_donnees(nombre_sites: int, date_debut: dt.datetime, date_fin: dt.datetime, model,
                                   identifiant_max, export: bool, base):
+    """
+    cette fonction est pensée pour la création de données dans le cadre de leur utilisation dans une requête d'ajout de
+     données. elle est différente de la première car elle doit permettre de créer des données qui sont hors de l'intervalle
+     donné pour le remplissage.
+    :param nombre_sites: le nombre de courbes de charge à créer
+    :param date_debut: la date du premier élément de chaque courbe
+    :param date_fin: la date du dernier élément de chaque courbe
+    :param model: le model à utiliser (utilisé en cas de sérialisation en objet)
+    :param export: un booléen pour spécifier si les courbes de charges doivent être enregistrées dans des fichiers CSV
+    :param base: le nom de la base de données (sert à savoir quel traitement appliquer aux données créées)
+    :param identifiant_max: l'identifiant maximum déjà présent en base (pour éviter de réécrire sur des courbes qui existent déjà)
+    :return:
+    """
     liste_elements = []
     site = identifiant_max
     date_debut = localise_date(date_debut)
