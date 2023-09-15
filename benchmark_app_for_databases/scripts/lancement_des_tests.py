@@ -38,7 +38,7 @@ def run():
 
     date_depart_population = dt.datetime(2021, 1, 1)
     date_fin_population = dt.datetime(2023, 7, 31)
-    population_base = 10
+    population_base = 100
     ecart_aleatoire = 0
 
     try:
@@ -77,12 +77,12 @@ def run():
                           dt.datetime(2023, 7, 28),
                           population_base))
 
-            # print('lecture 100 courbe')
-            #
-            # liste_performances.extend(
-            #     benchmark(database, models, 100, 'courbe', 'lecture', dt.datetime(2022, 2, 1),
-            #               dt.datetime(2023, 2, 1),
-            #               population_base))
+            print('lecture 100 courbe')
+
+            liste_performances.extend(
+                benchmark(database, models, 100, 'courbe', 'lecture', dt.datetime(2022, 2, 1),
+                          dt.datetime(2023, 2, 1),
+                          population_base))
 
             # print('lecture 1000 courbe')
 
@@ -115,12 +115,12 @@ def run():
                           dt.datetime(2023, 8, 1),
                           population_base))
 
-            # print('ecriture 100 courbes')
-            #
-            # liste_performances.extend(
-            #     benchmark(database, models, 100, 'courbe', 'ecriture', dt.datetime(2021, 1, 1, 0, 0),
-            #               dt.datetime(2022, 1, 1, 0, 4),
-            #               population_base))
+            print('ecriture 100 courbes')
+
+            liste_performances.extend(
+                benchmark(database, models, 100, 'courbe', 'ecriture', dt.datetime(2021, 1, 1, 0, 0),
+                          dt.datetime(2022, 1, 1, 0, 4),
+                          population_base))
 
             # print('ecriture 1000 courbes')
 
@@ -134,10 +134,12 @@ def run():
         print(f'liste_performances={liste_performances}')
         # profiler.gen_report()
 
-        resultats_ecriture = pd.DataFrame(liste_performances)
-        resultats_ecriture.to_csv(f'resultats_{population_base}_courbes_entre{date_depart_population}_et_{date_fin_population}_{dt.datetime.now()}.csv')
+
 
     finally:
+        resultats_ecriture = pd.DataFrame(liste_performances)
+        resultats_ecriture.to_csv(
+            f'resultats_{population_base}_courbes_entre{date_depart_population}_et_{date_fin_population}_{dt.datetime.now()}.csv')
         for k, i in _dict.items():
             for j in i:
                 print(f'grand nettoyage lancé pour {j.__name__}')

@@ -3,6 +3,7 @@ import datetime as dt
 
 
 class InterfaceQueryDb:
+    taille_ram = 5
 
     @abstractmethod
     def read_at_timestamp(self, timestamp: dt.datetime, model, identifiants_sites: [], *args, **kwargs):
