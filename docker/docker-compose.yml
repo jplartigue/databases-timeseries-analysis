@@ -4,19 +4,14 @@ version: "3.9"
 services:
 
   outil_test:
-    image: outil_test:latest
+    image: database-timeseries-analysis:latest
     # Necessary for accessing and creating files with the current user
     user: "${USER_ID:-root}:${GROUP_ID:-root}"
     ports:
       - "8000:8000"
     volumes:
-      - ..:/usr/src/databases-timeseries-analysis
+      - ..:/usr/src/databases_timeseries_analysis
       - ~/.bash_history:/root/.bash_history
-    depends_on:
-      - postgres
-      - questdb
-      - timescale
-      - influxdb
     #    env_file:
 #      - ../config/dev.env
     restart: unless-stopped

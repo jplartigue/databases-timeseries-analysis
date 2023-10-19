@@ -1,4 +1,4 @@
-# databases-timeseries-analysis
+# databases_timeseries_analysis
 
 !attention! à l'heure actuelle le conteneur influxdb consomme énormément de RAM. pour l'instant il est impossible de 
 benchmark cette base avec des courbes de charge de plus de 6 mois sous peine de déclencher une erreur de Timeout et de 
@@ -143,7 +143,7 @@ le script "lancement_des_tests" va dérouler les tests définis par l'utilisateu
 cette fonction est chargée de déterminer le type de test à mener et donc quelle méthode appeler.\
 les méthodes appelées en fonction de l'opération sont définies dans le fichier "interfaces_bases_de_donnees" et sont 
 associées aux models en définissant le champ "interface" de ce dernier et en y associant la bonne interface.\
-le fichier [generation_donnes.py](generation_donnes.py) abrite, lui les fonctions de génération de données que sont 
+le fichier [generation_donnes.py](data_generator.py) abrite, lui les fonctions de génération de données que sont 
 "generation_donnees" et "generation_pour_ajout_donnees". le sigleton ne permetant plus d'utiliser la même fonction pour
 populer une base et pour ajouter de nouyvelles données qui pourraient être en dehors de la période temporelle désignée 
 lors du remplissage de la base.\

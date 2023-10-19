@@ -6,7 +6,7 @@ from time import time
 
 import pandas as pd
 
-CODE_DIR = '/usr/src/databases-timeseries-analysis/'
+CODE_DIR = '/usr/src/databases_timeseries_analysis/'
 EXTERNAL_LIB_DIR = '/opt/venv/lib/python/'
 
 

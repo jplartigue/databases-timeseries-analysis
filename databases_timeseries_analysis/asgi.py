@@ -1,5 +1,5 @@
 """
-ASGI config for application_benchmark project.
+ASGI config for databases_timeseries_analysis project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'application_benchmark.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'databases_timeseries_analysis.settings')
 
 application = get_asgi_application()

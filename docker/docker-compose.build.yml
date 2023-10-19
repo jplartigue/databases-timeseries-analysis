@@ -3,11 +3,11 @@ version: "3.9"
 services:
 
   outil_test:
-    image: outil_test:latest
+    image: database-timeseries-analysis:latest
     build:
       context: ../
       args:
         python_version: ${PYTHON_VERSION:-3.11.4-slim}
       dockerfile: docker/dockerfile
       cache_from:
-        - outil_test:latest
+        - database-timeseries-analysis:latest

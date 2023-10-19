@@ -9,7 +9,7 @@ from pymongo import MongoClient
 import psycopg2 as pg
 import influxdb_client
 from influxdb_client.client.write_api import SYNCHRONOUS
-from generation_donnes import generation_donnees, generation_pour_ajout_donnees
+# from data_generator import generate_fake_dataframe, generation_pour_ajout_donnees
 from utils.interface_query_db import InterfaceQueryDb
 from questdb.ingress import Sender
 from utils.localtime import localise_datetime
@@ -434,11 +434,11 @@ class InterfaceMongo(InterfaceQueryDb):
                 if derniere_entree < k['horodate']:
                     derniere_entree = k['horodate']
             print(f'date ultime = {derniere_entree}')
-            element_a_inserer, _ = generation_donnees(1,
-                                                      derniere_entree + dt.timedelta(minutes=5),
-                                                      derniere_entree + dt.timedelta(minutes=5 * nombre_elements),
-                                                      model, i,
-                                                      False, 'mongo', 0)
+            element_a_inserer, _ = generate_fake_dataframe(1,
+                                                           derniere_entree + dt.timedelta(minutes=5),
+                                                           derniere_entree + dt.timedelta(minutes=5 * nombre_elements),
+                                                           model, i,
+                                                           False, 'mongo', 0)
             liste_elements_a_inserer.extend(element_a_inserer)
         debut = time.time()
         collection.insert_many(liste_elements_a_inserer)

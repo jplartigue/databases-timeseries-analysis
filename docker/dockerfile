@@ -3,7 +3,7 @@ ARG python_version
 FROM python:${python_version}
 
 
-ENV PROJET_NAME databases-timeseries-analysis
+ENV PROJET_NAME databases_timeseries_analysis
 # Ajout d'un utilisateur
 RUN useradd -m -d /usr/src/${PROJET_NAME} holmium
 

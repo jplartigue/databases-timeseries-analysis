@@ -1,5 +1,5 @@
 """
-WSGI config for application_benchmark project.
+WSGI config for databases_timeseries_analysis project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'application_benchmark.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'databases_timeseries_analysis.settings')
 
 application = get_wsgi_application()

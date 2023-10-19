@@ -1,5 +1,5 @@
 from benchmark_app_for_databases.interfaces_bases_de_donnees import *
-from generation_donnes import generation_donnees
+from data_generator import generate_fake_dataframe
 
 
 def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
@@ -38,9 +38,9 @@ def insertion_sans_saturer_la_ram(base: str, nombre_sites: int, models: list,
         current = 0
         while current != nombre_sites:
             if population:
-                liste_elements, identifiant_max = generation_donnees(min(limite_courbes_en_ram, nombre_sites - current),
-                                                                     date_debut, date_fin, current_model,
-                                                                     export, base, rand_days)
+                liste_elements, identifiant_max = generate_fake_dataframe(min(limite_courbes_en_ram, nombre_sites - current),
+                                                                          date_debut, date_fin, current_model,
+                                                                          export, base, rand_days)
             else:
                 liste_elements, identifiant_max = generation_pour_ajout_donnees(min(limite_courbes_en_ram,
                                                                                     nombre_sites - current),
